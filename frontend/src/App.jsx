@@ -4,6 +4,7 @@ import './App.css'
 function App() {
   const [jobText, setJobText] = useState('')
   const [skills, setSkills] = useState('')
+  const [companyName, setCompanyName] = useState('')
   const [result, setResult] = useState(null)
   const [loading, setLoading] = useState(false)
 
@@ -17,6 +18,7 @@ function App() {
         body: JSON.stringify({
           job_text: jobText,
           student_skills: skills,
+          company_name: companyName,
         }),
       })
       const data = await response.json()
@@ -38,7 +40,16 @@ function App() {
   return (
     <div style={{ maxWidth: '650px', margin: '40px auto', fontFamily: 'sans-serif', padding: '0 16px' }}>
       <h1>CareerTrust AI</h1>
-      <p>Paste a job/internship offer and your skills to analyze it.</p>
+      <p>Paste a job/internship offer and your details to analyze it.</p>
+
+      <label>Company Name:</label>
+      <input
+        type="text"
+        style={{ width: '100%', marginBottom: '12px', padding: '8px' }}
+        value={companyName}
+        onChange={(e) => setCompanyName(e.target.value)}
+        placeholder="e.g. Wipro, Infosys"
+      />
 
       <label>Job Offer Text:</label>
       <textarea
@@ -68,7 +79,6 @@ function App() {
 
       {result && !result.error && (
         <div style={{ marginTop: '24px' }}>
-          {/* Risk + Opportunity Score row */}
           <div style={{ display: 'flex', gap: '12px', marginBottom: '16px', flexWrap: 'wrap' }}>
             <div style={{ flex: 1, minWidth: '200px', padding: '16px', borderRadius: '8px', background: getRiskColor(result.risk_level), color: '#fff' }}>
               <h3 style={{ margin: 0 }}>Risk Score: {result.risk_score}/100</h3>
@@ -80,7 +90,6 @@ function App() {
             </div>
           </div>
 
-          {/* Scam Indicators */}
           <h3>Scam Indicators Found ({result.scam_indicators.length})</h3>
           {result.scam_indicators.length === 0 && (
             <p>No scam keywords detected. Still verify the company and recruiter independently.</p>
@@ -93,7 +102,26 @@ function App() {
             </div>
           ))}
 
-          {/* Salary Analysis */}
+          <h3 style={{ marginTop: '20px' }}>Company Verification</h3>
+          <div style={{ border: '1px solid #ddd', borderRadius: '4px', padding: '12px', marginBottom: '10px' }}>
+            <p style={{ margin: '4px 0' }}><strong>Status:</strong> {result.company_verification.status}</p>
+            <p style={{ margin: '4px 0', color: '#555' }}>{result.company_verification.note}</p>
+          </div>
+
+          <h3 style={{ marginTop: '20px' }}>Recruiter Verification</h3>
+          <div style={{ border: '1px solid #ddd', borderRadius: '4px', padding: '12px', marginBottom: '10px' }}>
+            <p style={{ margin: '4px 0' }}><strong>Email Found:</strong> {result.recruiter_verification.email_found || 'None'}</p>
+            <p style={{ margin: '4px 0' }}><strong>Domain Type:</strong> {result.recruiter_verification.domain_type}</p>
+            <p style={{ margin: '4px 0', color: '#555' }}>{result.recruiter_verification.note}</p>
+          </div>
+
+          {result.link_check.suspicious_links.length > 0 && (
+            <div style={{ border: '1px solid #ddd', borderLeft: '4px solid #ef6c00', borderRadius: '4px', padding: '12px', marginBottom: '10px' }}>
+              <strong>⚠️ Suspicious Links Detected</strong>
+              <p style={{ margin: '6px 0' }}>{result.link_check.note}</p>
+            </div>
+          )}
+
           <h3 style={{ marginTop: '20px' }}>Salary Analysis</h3>
           <div style={{ border: '1px solid #ddd', borderRadius: '4px', padding: '12px', marginBottom: '10px' }}>
             <p style={{ margin: '4px 0' }}><strong>Offered:</strong> {result.salary_analysis.offered_salary ? `₹${result.salary_analysis.offered_salary}` : 'Not mentioned'}</p>
@@ -102,7 +130,6 @@ function App() {
             <p style={{ margin: '4px 0', color: '#555' }}>{result.salary_analysis.explanation}</p>
           </div>
 
-          {/* Skill Match */}
           <h3 style={{ marginTop: '20px' }}>Skill Match</h3>
           <div style={{ border: '1px solid #ddd', borderRadius: '4px', padding: '12px', marginBottom: '10px' }}>
             <p style={{ margin: '4px 0' }}><strong>Match:</strong> {result.skill_match.skill_match_percent}%</p>
@@ -111,7 +138,6 @@ function App() {
             <p style={{ margin: '4px 0', color: '#555' }}>{result.skill_match.recommendation}</p>
           </div>
 
-          {/* Safe Apply Checklist */}
           <h3 style={{ marginTop: '20px' }}>Safe Apply Checklist</h3>
           <ul>
             {result.safe_apply_checklist.map((item, idx) => (

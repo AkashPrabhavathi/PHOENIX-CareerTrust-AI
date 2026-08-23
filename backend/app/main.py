@@ -9,6 +9,7 @@ from .analysis import (
     calculate_opportunity_score,
     SAFE_APPLY_CHECKLIST,
 )
+from .verification import verify_recruiter_email, verify_company_presence, check_suspicious_links
 
 app = FastAPI(title="CareerTrust AI - Backend")
 
@@ -29,6 +30,7 @@ def health_check():
 class AnalyzeRequest(BaseModel):
     job_text: str
     student_skills: str
+    company_name: str = ""
 
 
 @app.post("/analyze")
@@ -39,6 +41,10 @@ def analyze_opportunity(data: AnalyzeRequest):
 
     salary_info = analyze_salary(data.job_text)
     skill_info = analyze_skill_match(data.job_text, data.student_skills)
+
+    recruiter_info = verify_recruiter_email(data.job_text, data.company_name)
+    company_info = verify_company_presence(data.company_name)
+    link_info = check_suspicious_links(data.job_text)
 
     opportunity_score = calculate_opportunity_score(
         risk_score, salary_info["status"], skill_info["skill_match_percent"]
@@ -51,6 +57,9 @@ def analyze_opportunity(data: AnalyzeRequest):
         "scam_indicators": warnings,
         "salary_analysis": salary_info,
         "skill_match": skill_info,
+        "recruiter_verification": recruiter_info,
+        "company_verification": company_info,
+        "link_check": link_info,
         "safe_apply_checklist": SAFE_APPLY_CHECKLIST,
         "disclaimer": "This score is an indication based on common scam patterns and typical ranges. It is not final legal or factual proof of fraud. Always verify independently before applying or paying any money.",
     }
