@@ -174,11 +174,21 @@ Frontend runs at: `http://localhost:5173`
 
 
 
-\_Add screenshots of the working app here before submission.\_
+\### Low Risk / Genuine-looking Opportunity
+
+!\[Low Risk 1](docs/screenshots/low-risk-1.png)
+
+!\[Low Risk 2](docs/screenshots/low-risk-2.png)
 
 
 
-\---
+\### High Risk / Scam Opportunity
+
+!\[High Risk 1](docs/screenshots/high-risk-1.png)
+
+!\[High Risk 2](docs/screenshots/high-risk-2.png)
+
+!\[High Risk 3](docs/screenshots/high-risk-3.png)
 
 
 
