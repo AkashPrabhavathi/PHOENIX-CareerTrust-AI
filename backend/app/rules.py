@@ -151,3 +151,38 @@ def get_risk_level(score: int) -> str:
         return "High Risk"
     else:
         return "Very High Risk"
+
+def detect_sensitive_info(job_text: str):
+    """
+    Detects if the JOB TEXT itself is asking the student to share sensitive info.
+    (This is different from scam rules - this specifically flags requests for
+    Aadhaar, PAN, bank details, OTP, passwords, card numbers.)
+    """
+    sensitive_patterns = [
+        {"label": "Aadhaar Number", "pattern": r'\b\d{4}\s?\d{4}\s?\d{4}\b'},
+        {"label": "PAN Number", "pattern": r'\b[A-Z]{5}\d{4}[A-Z]\b'},
+        {"label": "Bank Account Number", "pattern": r'\b\d{9,18}\b'},
+        {"label": "OTP", "pattern": r'\botp\b'},
+        {"label": "Password", "pattern": r'\bpassword\b'},
+        {"label": "Card Number", "pattern": r'\b\d{4}[- ]?\d{4}[- ]?\d{4}[- ]?\d{4}\b'},
+    ]
+
+    detected = []
+    text_lower = job_text.lower()
+
+    for item in sensitive_patterns:
+        if re.search(item["pattern"], text_lower, re.IGNORECASE):
+            detected.append(item["label"])
+
+    if detected:
+        return {
+            "sensitive_data_requested": True,
+            "types_detected": detected,
+            "warning": "This message appears to request sensitive personal information. Never share Aadhaar, PAN, bank details, OTP, passwords, or card numbers with an unverified recruiter.",
+        }
+
+    return {
+        "sensitive_data_requested": False,
+        "types_detected": [],
+        "warning": "No direct request for sensitive personal information was detected in this text. Still remain cautious.",
+    }

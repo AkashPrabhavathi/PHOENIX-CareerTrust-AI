@@ -102,6 +102,13 @@ function App() {
             </div>
           ))}
 
+          {result.sensitive_data_check && result.sensitive_data_check.sensitive_data_requested && (
+            <div style={{ border: '1px solid #ddd', borderLeft: '4px solid #c62828', borderRadius: '4px', padding: '12px', marginBottom: '10px', background: '#fff3f3' }}>
+              <strong>🔒 Sensitive Information Requested: {result.sensitive_data_check.types_detected.join(', ')}</strong>
+              <p style={{ margin: '6px 0 0 0' }}>{result.sensitive_data_check.warning}</p>
+            </div>
+          )}
+
           <h3 style={{ marginTop: '20px' }}>Company Verification</h3>
           <div style={{ border: '1px solid #ddd', borderRadius: '4px', padding: '12px', marginBottom: '10px' }}>
             <p style={{ margin: '4px 0' }}><strong>Status:</strong> {result.company_verification.status}</p>

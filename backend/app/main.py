@@ -2,7 +2,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 
-from .rules import detect_scam_signals, calculate_risk_score, get_risk_level
+from .rules import detect_scam_signals, calculate_risk_score, get_risk_level, detect_sensitive_info
 from .analysis import (
     analyze_salary,
     analyze_skill_match,
@@ -38,6 +38,7 @@ def analyze_opportunity(data: AnalyzeRequest):
     warnings = detect_scam_signals(data.job_text)
     risk_score = calculate_risk_score(warnings)
     risk_level = get_risk_level(risk_score)
+    sensitive_info = detect_sensitive_info(data.job_text)
 
     salary_info = analyze_salary(data.job_text)
     skill_info = analyze_skill_match(data.job_text, data.student_skills)
@@ -55,6 +56,7 @@ def analyze_opportunity(data: AnalyzeRequest):
         "risk_level": risk_level,
         "opportunity_score": opportunity_score,
         "scam_indicators": warnings,
+        "sensitive_data_check": sensitive_info,
         "salary_analysis": salary_info,
         "skill_match": skill_info,
         "recruiter_verification": recruiter_info,
