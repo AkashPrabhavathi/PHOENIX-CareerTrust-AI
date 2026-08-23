@@ -7,6 +7,7 @@ function App() {
   const [companyName, setCompanyName] = useState('')
   const [result, setResult] = useState(null)
   const [loading, setLoading] = useState(false)
+  const [comparisonList, setComparisonList] = useState([])
 
   const handleAnalyze = async () => {
     setLoading(true)
@@ -29,6 +30,25 @@ function App() {
     setLoading(false)
   }
 
+   const addToComparison = () => {
+    if (!result || result.error) return
+    const entry = {
+      id: Date.now(),
+      companyName: companyName || 'Unnamed Company',
+      risk_score: result.risk_score,
+      risk_level: result.risk_level,
+      opportunity_score: result.opportunity_score,
+      salary_status: result.salary_analysis.status,
+      skill_match_percent: result.skill_match.skill_match_percent,
+      missing_skills: result.skill_match.missing_skills,
+    }
+    setComparisonList([...comparisonList, entry])
+  }
+
+  const removeFromComparison = (id) => {
+    setComparisonList(comparisonList.filter((item) => item.id !== id))
+  }
+
   const getRiskColor = (level) => {
     if (level === 'Low Risk') return '#2e7d32'
     if (level === 'Needs Verification') return '#f9a825'
@@ -37,8 +57,15 @@ function App() {
     return '#555'
   }
 
+  const getRecommendation = (entry) => {
+    if (entry.risk_score >= 61) return 'Avoid until verified'
+    if (entry.risk_score >= 31) return 'Apply with caution, verify first'
+    if (entry.opportunity_score >= 70) return 'Recommended'
+    return 'Worth applying after verification'
+  }
+
   return (
-    <div style={{ maxWidth: '650px', margin: '40px auto', fontFamily: 'sans-serif', padding: '0 16px' }}>
+    <div style={{ maxWidth: '700px', margin: '40px auto', fontFamily: 'sans-serif', padding: '0 16px' }}>
       <h1>CareerTrust AI</h1>
       <p>Paste a job/internship offer and your details to analyze it.</p>
 
@@ -89,6 +116,10 @@ function App() {
               <p style={{ margin: '4px 0 0 0' }}>Overall quality of this opportunity</p>
             </div>
           </div>
+
+          <button onClick={addToComparison} style={{ marginBottom: '16px', background: '#2e7d32', color: '#fff', border: 'none', padding: '8px 14px', borderRadius: '4px', cursor: 'pointer' }}>
+            + Add to Comparison
+          </button>
 
           <h3>Scam Indicators Found ({result.scam_indicators.length})</h3>
           {result.scam_indicators.length === 0 && (
@@ -155,6 +186,48 @@ function App() {
           <p style={{ marginTop: '16px', fontSize: '14px', color: '#666' }}>
             ⚠️ {result.disclaimer}
           </p>
+        </div>
+      )}
+
+      {comparisonList.length > 0 && (
+        <div style={{ marginTop: '40px' }}>
+          <h2>Opportunity Comparison ({comparisonList.length})</h2>
+          <div style={{ overflowX: 'auto' }}>
+            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '14px' }}>
+              <thead>
+                <tr style={{ background: '#f0f0f0', textAlign: 'left' }}>
+                  <th style={{ padding: '8px', border: '1px solid #ddd' }}>Company</th>
+                  <th style={{ padding: '8px', border: '1px solid #ddd' }}>Risk</th>
+                  <th style={{ padding: '8px', border: '1px solid #ddd' }}>Opportunity</th>
+                  <th style={{ padding: '8px', border: '1px solid #ddd' }}>Salary</th>
+                  <th style={{ padding: '8px', border: '1px solid #ddd' }}>Skill Match</th>
+                  <th style={{ padding: '8px', border: '1px solid #ddd' }}>Skills to Learn</th>
+                  <th style={{ padding: '8px', border: '1px solid #ddd' }}>Recommendation</th>
+                  <th style={{ padding: '8px', border: '1px solid #ddd' }}></th>
+                </tr>
+              </thead>
+              <tbody>
+                {comparisonList.map((entry) => (
+                  <tr key={entry.id}>
+                    <td style={{ padding: '8px', border: '1px solid #ddd' }}>{entry.companyName}</td>
+                    <td style={{ padding: '8px', border: '1px solid #ddd', color: getRiskColor(entry.risk_level) }}>
+                      {entry.risk_score}/100 ({entry.risk_level})
+                    </td>
+                    <td style={{ padding: '8px', border: '1px solid #ddd' }}>{entry.opportunity_score}/100</td>
+                    <td style={{ padding: '8px', border: '1px solid #ddd' }}>{entry.salary_status}</td>
+                    <td style={{ padding: '8px', border: '1px solid #ddd' }}>{entry.skill_match_percent}%</td>
+                    <td style={{ padding: '8px', border: '1px solid #ddd' }}>{entry.missing_skills.join(', ') || 'None'}</td>
+                    <td style={{ padding: '8px', border: '1px solid #ddd' }}>{getRecommendation(entry)}</td>
+                    <td style={{ padding: '8px', border: '1px solid #ddd' }}>
+                      <button onClick={() => removeFromComparison(entry.id)} style={{ background: '#c62828', color: '#fff', border: 'none', padding: '4px 8px', borderRadius: '4px', cursor: 'pointer' }}>
+                        Remove
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         </div>
       )}
     </div>
