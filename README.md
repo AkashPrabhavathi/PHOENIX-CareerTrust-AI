@@ -1,1 +1,1 @@
-# PHOENIXCareerTrust AI by Team PHOENIX
+# CareerTrust AI by Team PHOENIX
