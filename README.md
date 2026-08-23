@@ -1,28 +1,68 @@
+<div align="center">
+
+
+
 \# CareerTrust AI
 
 
 
-\*\*Team:\*\* PHOENIX
+\### Don't just detect scams. Make smarter career decisions.
 
 
 
-\*\*Tagline:\*\* Don't just detect scams. Make smarter career decisions.
+\*\*Team PHOENIX\*\* \&nbsp;|\&nbsp; HackSpora 2.0 \&nbsp;|\&nbsp; Karpagam College
 
 
 
-\## Problem Statement
+<img alt="React" src="https://img.shields.io/badge/Frontend-React%20%2B%20Vite-0F6E56?style=flat-square" />
+
+<img alt="FastAPI" src="https://img.shields.io/badge/Backend-FastAPI-0F6E56?style=flat-square" />
+
+<img alt="Python" src="https://img.shields.io/badge/Python-3.10%2B-0F6E56?style=flat-square" />
+
+<img alt="Status" src="https://img.shields.io/badge/Status-MVP-02C39A?style=flat-square" />
 
 
 
-Students receive many job and internship offers through WhatsApp, email, LinkedIn, and other platforms, and often cannot tell whether an opportunity is genuine, whether the company/recruiter is trustworthy, whether the salary is fair, or whether the role matches their skills.
+</div>
 
 
 
-\## Proposed Solution
+<br/>
 
 
 
-CareerTrust AI is an AI-powered career safety and decision-support platform. A student pastes a job/internship message, enters their skills and (optionally) the company name, and receives a complete Opportunity Trust Report — combining scam detection, salary analysis, skill match, and company/recruiter verification — in one place.
+\## Problem statement
+
+
+
+Students receive job and internship offers through WhatsApp, email, LinkedIn, and other platforms every day. Most of the time, they have no easy way to know:
+
+
+
+\- Whether the opportunity is genuine or a scam
+
+\- Whether the company or recruiter is trustworthy
+
+\- Whether the salary or stipend being offered is fair
+
+\- Whether the role actually matches their skills
+
+
+
+<br/>
+
+
+
+\## Proposed solution
+
+
+
+\*\*CareerTrust AI\*\* is an AI-powered career safety and decision-support platform. A student pastes a job or internship message, adds their skills, and (optionally) the company name — and receives a complete \*\*Opportunity Trust Report\*\* that combines scam detection, salary analysis, skill match, and company/recruiter verification, all in one place.
+
+
+
+<br/>
 
 
 
@@ -30,77 +70,149 @@ CareerTrust AI is an AI-powered career safety and decision-support platform. A s
 
 
 
-\- \*\*Scam Detection Engine\*\* – Rule-based detection of 13+ common scam patterns (registration fees, OTP requests, personal email domains, urgent payment pressure, shortened links, etc.), each with evidence extracted from the submitted text.
+<table>
 
-\- \*\*Risk Score (0–100)\*\* – Clear risk level: Low Risk / Needs Verification / High Risk / Very High Risk.
+<tr>
 
-\- \*\*Opportunity Score (0–100)\*\* – Combines safety, salary fairness, and skill match into one overall score.
-
-\- \*\*Salary Analysis\*\* – Compares the offered salary/stipend against a typical range for the role type.
-
-\- \*\*Skill Match\*\* – Compares student skills against the job description and highlights missing skills.
-
-\- \*\*Company Verification\*\* – Guidance on verifying the company through official channels.
-
-\- \*\*Recruiter Verification\*\* – Detects whether the recruiter's email uses a personal domain (Gmail/Yahoo/etc.) vs a company domain.
-
-\- \*\*Suspicious Link Detection\*\* – Flags shortened/obscured links commonly used in phishing.
-
-\- \*\*Safe Apply Checklist\*\* – A clear list of safety steps before applying or paying any money.
+<td width="50%" valign="top">
 
 
 
-\## Responsible AI \& Privacy Note
+\*\*Scam detection engine\*\*
+
+Rule-based detection of 13+ common scam patterns — registration fees, OTP requests, personal email domains, urgent payment pressure, shortened links — each backed by evidence pulled from the text.
 
 
 
-CareerTrust AI does \*\*not\*\* claim to detect scams with 100% accuracy. All scores are indicators based on common patterns, not legal or factual proof of fraud. Users are always advised to verify independently before applying, paying money, or sharing sensitive information. The system does not store submitted job text or personal data beyond the current session in this MVP.
+\*\*Risk score (0–100)\*\*
+
+Clear risk levels: Low Risk / Needs Verification / High Risk / Very High Risk.
 
 
 
-\## Technology Stack
+\*\*Opportunity score (0–100)\*\*
+
+Combines safety, salary fairness, and skill match into one overall score.
 
 
 
-\- \*\*Frontend:\*\* React + Vite
+\*\*Salary analysis\*\*
 
-\- \*\*Backend:\*\* Python, FastAPI, Pydantic
-
-\- \*\*Detection Engine:\*\* Rule-based (keyword + pattern matching), designed to be extended with AI/ML models later
+Compares the offered stipend against a typical range for the role type.
 
 
 
-\## System Workflow
+</td>
+
+<td width="50%" valign="top">
 
 
 
-1\. Student pastes job/internship text, enters skills and company name.
+\*\*Skill match\*\*
 
-2\. Frontend sends the data to the FastAPI backend (`/analyze`).
-
-3\. Backend runs the scam detection engine, salary analysis, skill match, and verification checks.
-
-4\. Backend returns a combined Opportunity Trust Report.
-
-5\. Frontend displays the report with risk score, opportunity score, warnings, and a safe-apply checklist.
+Compares student skills against the job description and highlights what's missing.
 
 
 
-\## Installation \& Setup
+\*\*Company verification\*\*
+
+Guidance on verifying the company through official channels.
+
+
+
+\*\*Recruiter verification\*\*
+
+Flags personal-domain recruiter emails (Gmail/Yahoo/etc.) vs a company domain.
+
+
+
+\*\*Suspicious link detection\*\*
+
+Flags shortened/obscured links commonly used in phishing.
+
+
+
+\*\*Safe apply checklist\*\*
+
+A clear list of safety steps before applying or paying any money.
+
+
+
+</td>
+
+</tr>
+
+</table>
+
+
+
+<br/>
+
+
+
+\## Responsible AI \& privacy note
+
+
+
+> CareerTrust AI does \*\*not\*\* claim to detect scams with 100% accuracy. All scores are indicators based on common patterns — not legal or factual proof of fraud. Users are always advised to verify independently before applying, paying money, or sharing sensitive information. The system does not store submitted job text or personal data beyond the current session in this MVP.
+
+
+
+<br/>
+
+
+
+\## Technology stack
+
+
+
+| Layer | Choice |
+
+|---|---|
+
+| Frontend | React + Vite |
+
+| Backend | Python, FastAPI, Pydantic |
+
+| Detection engine | Rule-based (keyword + pattern matching), built to extend with AI/ML models |
+
+
+
+<br/>
+
+
+
+\## System workflow
+
+
+
+<div align="center">
+
+
+
+`Student pastes job text + skills`  →  `Frontend calls FastAPI /analyze`  →  `Rules + scoring engine runs`  →  `Opportunity Trust Report returned`  →  `Frontend renders full report`
+
+
+
+</div>
+
+
+
+<br/>
+
+
+
+\## Installation \& setup
 
 
 
 \### Prerequisites
 
-\- Node.js (v18+)
-
-\- Python (3.10+)
-
-\- Git
+Node.js (v18+) \&nbsp;•\&nbsp; Python (3.10+) \&nbsp;•\&nbsp; Git
 
 
 
-\### Backend Setup
+\### Backend
 
 ```powershell
 
@@ -116,13 +228,11 @@ uvicorn app.main:app --reload
 
 ```
 
-Backend runs at: `http://127.0.0.1:8000`
-
-API docs at: `http://127.0.0.1:8000/docs`
+Runs at `http://127.0.0.1:8000` \&nbsp;•\&nbsp; Docs at `http://127.0.0.1:8000/docs`
 
 
 
-\### Frontend Setup
+\### Frontend
 
 ```powershell
 
@@ -134,25 +244,33 @@ npm run dev
 
 ```
 
-Frontend runs at: `http://localhost:5173`
+Runs at `http://localhost:5173`
 
 
 
-\## API Endpoints
+<br/>
 
 
 
-| Method | Endpoint    | Description                              |
-
-|--------|-------------|-------------------------------------------|
-
-| GET    | `/`         | Health check                              |
-
-| POST   | `/analyze`  | Submit job text, skills, company name and receive a full Opportunity Trust Report |
+\## API endpoints
 
 
 
-\## Future Enhancements
+| Method | Endpoint | Description |
+
+|:---:|---|---|
+
+| `GET` | `/` | Health check |
+
+| `POST` | `/analyze` | Submit job text, skills, and company name → get a full Opportunity Trust Report |
+
+
+
+<br/>
+
+
+
+\## Future enhancements
 
 
 
@@ -170,27 +288,65 @@ Frontend runs at: `http://localhost:5173`
 
 
 
+<br/>
+
+
+
 \## Screenshots
 
 
 
-\### Low Risk / Genuine-looking Opportunity
-
-!\[Low Risk 1](docs/screenshots/low-risk-1.png)
-
-!\[Low Risk 2](docs/screenshots/low-risk-2.png)
+<div align="center">
 
 
 
-\### High Risk / Scam Opportunity
-
-!\[High Risk 1](docs/screenshots/high-risk-1.png)
-
-!\[High Risk 2](docs/screenshots/high-risk-2.png)
-
-!\[High Risk 3](docs/screenshots/high-risk-3.png)
+\*\*Low risk / genuine-looking opportunity\*\*
 
 
 
-Built for HackSpora 2.0/Hackathon by Team PHOENIX.
+<img src="docs/screenshots/low-risk-1.png" width="45%" />
+
+<img src="docs/screenshots/low-risk-2.png" width="45%" />
+
+
+
+\*\*High risk / scam opportunity\*\*
+
+
+
+<img src="docs/screenshots/high-risk-1.png" width="30%" />
+
+<img src="docs/screenshots/high-risk-2.png" width="30%" />
+
+<img src="docs/screenshots/high-risk-3.png" width="30%" />
+
+
+
+</div>
+
+
+
+<br/>
+
+
+
+<div align="center">
+
+
+
+\---
+
+
+
+\*\*Built for HackSpora 2.0, Karpagam College, by Team PHOENIX\*\*
+
+
+
+Akash S (Team Lead) \&nbsp;•\&nbsp; Boobalan D \&nbsp;•\&nbsp; Bhavan V \&nbsp;•\&nbsp; Akash K \&nbsp;•\&nbsp; Devapriyan V
+
+
+
+</div>
+
+
 
