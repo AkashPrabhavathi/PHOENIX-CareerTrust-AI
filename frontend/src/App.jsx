@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import Tesseract from 'tesseract.js'
 import './App.css'
 
 function App() {
@@ -8,11 +9,38 @@ function App() {
   const [result, setResult] = useState(null)
   const [loading, setLoading] = useState(false)
   const [comparisonList, setComparisonList] = useState([])
-  const [showSignup, setShowSignup] = useState(false)
-  const [signupData, setSignupData] = useState({ name: '', email: '', phone: '' })
-  const [signupStatus, setSignupStatus] = useState('')
+
+  const [isLoggedIn, setIsLoggedIn] = useState(false)
+  const [showLogin, setShowLogin] = useState(true)
+  const [loginData, setLoginData] = useState({ name: '', email: '', phone: '' })
+  const [loginStatus, setLoginStatus] = useState('')
+
+  const [ocrLoading, setOcrLoading] = useState(false)
+  const [ocrProgress, setOcrProgress] = useState(0)
+
+  const handleLogin = async () => {
+    if (!loginData.name || !loginData.email) {
+      setLoginStatus('Please enter your name and email.')
+      return
+    }
+    try {
+      await fetch('http://127.0.0.1:8000/signup', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(loginData),
+      })
+    } catch (error) {
+      // even if backend is down, still let them use the app locally
+    }
+    setIsLoggedIn(true)
+    setShowLogin(false)
+  }
 
   const handleAnalyze = async () => {
+    if (!isLoggedIn) {
+      setShowLogin(true)
+      return
+    }
     setLoading(true)
     setResult(null)
     try {
@@ -33,23 +61,24 @@ function App() {
     setLoading(false)
   }
 
-  const handleSignup = async () => {
-    if (!signupData.name || !signupData.email) {
-      setSignupStatus('Please enter at least your name and email.')
-      return
-    }
+  const handleScreenshotUpload = async (e) => {
+    const file = e.target.files[0]
+    if (!file) return
+    setOcrLoading(true)
+    setOcrProgress(0)
     try {
-      const response = await fetch('http://127.0.0.1:8000/signup', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(signupData),
+      const { data } = await Tesseract.recognize(file, 'eng', {
+        logger: (m) => {
+          if (m.status === 'recognizing text') {
+            setOcrProgress(Math.round(m.progress * 100))
+          }
+        },
       })
-      const data = await response.json()
-      setSignupStatus(data.message || 'Signed up!')
-      setSignupData({ name: '', email: '', phone: '' })
+      setJobText(data.text.trim())
     } catch (error) {
-      setSignupStatus('Could not connect to backend.')
+      alert('Could not read text from this image. Try pasting the text manually.')
     }
+    setOcrLoading(false)
   }
 
   const addToComparison = () => {
@@ -87,51 +116,107 @@ function App() {
   }
 
   return (
-    <div style={{ minHeight: '100vh', background: 'linear-gradient(135deg, #e8f8f5 0%, #eaf2fb 100%)', fontFamily: 'sans-serif' }}>
+    <div style={{ minHeight: '100vh', background: 'linear-gradient(135deg, #e8f8f5 0%, #eaf2fb 100%)', fontFamily: 'sans-serif', position: 'relative' }}>
+
+      {/* LOGIN OVERLAY */}
+      <div style={{
+        position: 'fixed', top: 0, left: 0, right: 0, zIndex: 100,
+        transform: showLogin ? 'translateY(0)' : 'translateY(-120%)',
+        transition: 'transform 0.4s ease',
+        background: 'linear-gradient(90deg, #028090, #02c39a)',
+        boxShadow: '0 8px 24px rgba(0,0,0,0.25)',
+        padding: '24px 20px',
+      }}>
+        <div style={{ maxWidth: '380px', margin: '0 auto', background: '#fff', borderRadius: '14px', padding: '22px' }}>
+          <h3 style={{ marginTop: 0, color: '#028090', textAlign: 'center' }}>🛡️ Login to CareerTrust AI</h3>
+          <p style={{ fontSize: '12px', color: '#777', textAlign: 'center', marginTop: '-6px' }}>Free — just your name and email to get started</p>
+          <input
+            type="text" placeholder="Your Name" value={loginData.name}
+            onChange={(e) => setLoginData({ ...loginData, name: e.target.value })}
+            style={{ width: '100%', padding: '10px', marginBottom: '10px', borderRadius: '8px', border: '1px solid #ccc' }}
+          />
+          <input
+            type="email" placeholder="Email Address" value={loginData.email}
+            onChange={(e) => setLoginData({ ...loginData, email: e.target.value })}
+            style={{ width: '100%', padding: '10px', marginBottom: '10px', borderRadius: '8px', border: '1px solid #ccc' }}
+          />
+          <input
+            type="text" placeholder="Phone Number (optional)" value={loginData.phone}
+            onChange={(e) => setLoginData({ ...loginData, phone: e.target.value })}
+            style={{ width: '100%', padding: '10px', marginBottom: '14px', borderRadius: '8px', border: '1px solid #ccc' }}
+          />
+          <button onClick={handleLogin} style={{ width: '100%', background: '#02c39a', color: '#fff', border: 'none', padding: '12px', borderRadius: '8px', fontWeight: 'bold', cursor: 'pointer' }}>
+            Login &amp; Continue
+          </button>
+          {loginStatus && <p style={{ marginTop: '10px', color: '#c62828', fontSize: '13px', textAlign: 'center' }}>{loginStatus}</p>}
+          {isLoggedIn && (
+            <p onClick={() => setShowLogin(false)} style={{ marginTop: '10px', color: '#028090', fontSize: '12px', textAlign: 'center', cursor: 'pointer', textDecoration: 'underline' }}>
+              Close
+            </p>
+          )}
+        </div>
+      </div>
 
       {/* NAVBAR */}
       <div style={{ background: 'linear-gradient(90deg, #028090, #02c39a)', padding: '16px 32px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', color: '#fff', boxShadow: '0 2px 8px rgba(0,0,0,0.15)' }}>
         <div style={{ fontSize: '22px', fontWeight: 'bold' }}>🛡️ CareerTrust AI</div>
         <div>
-          <button onClick={() => setShowSignup(!showSignup)} style={{ background: '#fff', color: '#028090', border: 'none', padding: '8px 18px', borderRadius: '20px', fontWeight: 'bold', cursor: 'pointer', marginRight: '8px' }}>
-            {showSignup ? 'Close' : 'Sign Up Free'}
-          </button>
-          <button style={{ background: 'rgba(255,255,255,0.2)', color: '#fff', border: '1px solid #fff', padding: '8px 18px', borderRadius: '20px', cursor: 'pointer' }}>
-            About
-          </button>
+          {isLoggedIn ? (
+            <span style={{ marginRight: '12px', fontSize: '14px' }}>👋 {loginData.name}</span>
+          ) : (
+            <button onClick={() => setShowLogin(true)} style={{ background: '#fff', color: '#028090', border: 'none', padding: '8px 18px', borderRadius: '20px', fontWeight: 'bold', cursor: 'pointer' }}>
+              Login
+            </button>
+          )}
         </div>
       </div>
 
-      {/* SIGNUP PANEL */}
-      {showSignup && (
-        <div style={{ maxWidth: '420px', margin: '20px auto 0', background: '#fff', borderRadius: '14px', padding: '22px', boxShadow: '0 8px 24px rgba(0,0,0,0.12)' }}>
-          <h3 style={{ marginTop: 0, color: '#028090' }}>Try CareerTrust AI — Sign Up</h3>
-          <input
-            type="text" placeholder="Your Name" value={signupData.name}
-            onChange={(e) => setSignupData({ ...signupData, name: e.target.value })}
-            style={{ width: '100%', padding: '10px', marginBottom: '10px', borderRadius: '8px', border: '1px solid #ccc' }}
-          />
-          <input
-            type="email" placeholder="Email Address" value={signupData.email}
-            onChange={(e) => setSignupData({ ...signupData, email: e.target.value })}
-            style={{ width: '100%', padding: '10px', marginBottom: '10px', borderRadius: '8px', border: '1px solid #ccc' }}
-          />
-          <input
-            type="text" placeholder="Phone Number (optional)" value={signupData.phone}
-            onChange={(e) => setSignupData({ ...signupData, phone: e.target.value })}
-            style={{ width: '100%', padding: '10px', marginBottom: '14px', borderRadius: '8px', border: '1px solid #ccc' }}
-          />
-          <button onClick={handleSignup} style={{ width: '100%', background: '#02c39a', color: '#fff', border: 'none', padding: '12px', borderRadius: '8px', fontWeight: 'bold', cursor: 'pointer' }}>
-            Sign Up
-          </button>
-          {signupStatus && <p style={{ marginTop: '10px', color: '#028090', fontSize: '13px' }}>{signupStatus}</p>}
-        </div>
-      )}
-
       {/* HERO */}
-      <div style={{ textAlign: 'center', padding: '30px 20px 10px' }}>
-        <h1 style={{ color: '#0b2e33', fontSize: '32px', marginBottom: '6px' }}>CareerTrust AI</h1>
-        <p style={{ color: '#5b6e73' }}>Paste a job/internship offer and your details to analyze it.</p>
+      <div style={{ textAlign: 'center', padding: '48px 20px 24px' }}>
+        <div style={{ display: 'inline-block', background: '#e0f7f1', color: '#028090', padding: '6px 16px', borderRadius: '20px', fontSize: '12px', fontWeight: 'bold', letterSpacing: '0.5px', marginBottom: '16px' }}>
+          🤖 AI-POWERED CAREER SAFETY
+        </div>
+        <h1 style={{ color: '#0b2e33', fontSize: '38px', fontWeight: 800, marginBottom: '10px', lineHeight: 1.2 }}>
+          Don't just detect scams.<br />
+          <span style={{ background: 'linear-gradient(90deg, #028090, #02c39a)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
+            Make smarter career decisions.
+          </span>
+        </h1>
+        <p style={{ color: '#5b6e73', fontSize: '15px', maxWidth: '480px', margin: '0 auto' }}>
+          Paste a job or internship offer, upload a screenshot, or type it in — get a full trust report in seconds.
+        </p>
+
+        <div style={{ display: 'flex', justifyContent: 'center', gap: '28px', marginTop: '28px', flexWrap: 'wrap' }}>
+          <div style={{ textAlign: 'center' }}>
+            <div style={{ fontSize: '24px', fontWeight: 800, color: '#028090' }}>13+</div>
+            <div style={{ fontSize: '11px', color: '#5b6e73' }}>Scam Patterns Checked</div>
+          </div>
+          <div style={{ textAlign: 'center' }}>
+            <div style={{ fontSize: '24px', fontWeight: 800, color: '#028090' }}>8</div>
+            <div style={{ fontSize: '11px', color: '#5b6e73' }}>Trust Checks Per Report</div>
+          </div>
+          <div style={{ textAlign: 'center' }}>
+            <div style={{ fontSize: '24px', fontWeight: 800, color: '#028090' }}>100%</div>
+            <div style={{ fontSize: '11px', color: '#5b6e73' }}>Free to Use</div>
+          </div>
+        </div>
+      </div>
+
+      {/* HOW IT WORKS */}
+      <div style={{ maxWidth: '700px', margin: '0 auto 20px', padding: '0 16px' }}>
+        <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap', justifyContent: 'center' }}>
+          {[
+            ['1️⃣', 'Paste or Upload', 'Add the job text or upload a WhatsApp/email screenshot'],
+            ['2️⃣', 'AI Analyzes', 'Scam signals, salary, skills & company get checked instantly'],
+            ['3️⃣', 'Get Your Report', 'A clear risk score with evidence and next steps'],
+          ].map((step, i) => (
+            <div key={i} style={{ flex: '1', minWidth: '180px', background: '#fff', borderRadius: '12px', padding: '16px', textAlign: 'center', boxShadow: '0 4px 14px rgba(0,0,0,0.06)' }}>
+              <div style={{ fontSize: '22px', marginBottom: '6px' }}>{step[0]}</div>
+              <div style={{ fontWeight: 'bold', color: '#0b2e33', fontSize: '13.5px', marginBottom: '4px' }}>{step[1]}</div>
+              <div style={{ fontSize: '11.5px', color: '#5b6e73' }}>{step[2]}</div>
+            </div>
+          ))}
+        </div>
       </div>
 
       <div style={{ maxWidth: '700px', margin: '0 auto', padding: '0 16px 40px' }}>
@@ -147,15 +232,25 @@ function App() {
             placeholder="e.g. Wipro, Infosys"
           />
 
+          <label style={{ fontWeight: 'bold', color: '#0b2e33' }}>📸 Upload a Screenshot (optional):</label>
+          <div style={{ marginTop: '6px', marginBottom: '14px' }}>
+            <input type="file" accept="image/*" onChange={handleScreenshotUpload} />
+            {ocrLoading && (
+              <div style={{ marginTop: '8px', fontSize: '13px', color: '#028090' }}>
+                🔎 Reading text from image... {ocrProgress}%
+              </div>
+            )}
+          </div>
+
           <label style={{ fontWeight: 'bold', color: '#0b2e33' }}>💬 Job Offer Text:</label>
           <div style={{ background: '#e9fdf3', borderRadius: '12px', padding: '10px', marginTop: '6px', marginBottom: '14px', border: '1px solid #b6e8d5' }}>
-            <div style={{ fontSize: '11px', color: '#028090', marginBottom: '4px' }}>📱 Paste message as received (WhatsApp / Email)</div>
+            <div style={{ fontSize: '11px', color: '#028090', marginBottom: '4px' }}>📱 Paste message as received, or upload a screenshot above</div>
             <textarea
               rows="6"
               style={{ width: '100%', padding: '10px', borderRadius: '10px', border: '1px solid #b6e8d5', background: '#fff', fontFamily: 'sans-serif' }}
               value={jobText}
               onChange={(e) => setJobText(e.target.value)}
-              placeholder="Paste the job or internship message here..."
+              placeholder="Paste the job or internship message here, or upload a screenshot above..."
             />
           </div>
 
@@ -173,7 +268,7 @@ function App() {
             disabled={loading || !jobText}
             style={{ width: '100%', background: 'linear-gradient(90deg, #028090, #02c39a)', color: '#fff', border: 'none', padding: '14px', borderRadius: '10px', fontWeight: 'bold', fontSize: '15px', cursor: 'pointer', opacity: loading || !jobText ? 0.6 : 1 }}
           >
-            {loading ? '⏳ Analyzing...' : '🔍 Analyze Opportunity'}
+            {loading ? '⏳ Analyzing...' : isLoggedIn ? '🔍 Analyze Opportunity' : '🔒 Login to Analyze'}
           </button>
         </div>
 
@@ -183,10 +278,9 @@ function App() {
 
         {result && !result.error && (
           <div>
-            {/* Message bubble preview */}
             <div style={{ marginBottom: '20px' }}>
               <div style={{ fontSize: '13px', color: '#5b6e73', marginBottom: '6px' }}>📩 Message received:</div>
-              <div style={{ background: '#dcf8c6', borderRadius: '12px', borderTopLeftRadius: 0, padding: '12px 16px', maxWidth: '90%', boxShadow: '0 2px 6px rgba(0,0,0,0.08)', fontSize: '13.5px', color: '#1b1b1b' }}>
+              <div style={{ background: '#dcf8c6', borderRadius: '12px', borderTopLeftRadius: 0, padding: '12px 16px', maxWidth: '90%', boxShadow: '0 2px 6px rgba(0,0,0,0.08)', fontSize: '13.5px', color: '#1b1b1b', whiteSpace: 'pre-wrap' }}>
                 {jobText}
               </div>
             </div>
@@ -206,7 +300,6 @@ function App() {
               ➕ Add to Comparison
             </button>
 
-            {/* AI Suggested Companies */}
             {result.suggested_companies && result.suggested_companies.length > 0 && (
               <div style={{ background: '#fff', borderRadius: '12px', padding: '16px', marginBottom: '16px', boxShadow: '0 4px 12px rgba(0,0,0,0.06)' }}>
                 <h3 style={{ marginTop: 0, color: '#0b2e33' }}>🤖 AI Suggested Companies For Your Skills</h3>
@@ -333,8 +426,14 @@ function App() {
         )}
       </div>
 
-      <div style={{ textAlign: 'center', padding: '20px', color: '#5b6e73', fontSize: '12px' }}>
-        Built by Team PHOENIX &bull; HackSpora 2.0 &bull; Karpagam College
+      <div style={{ background: '#0b2e33', color: '#cadcda', padding: '28px 20px', marginTop: '20px' }}>
+        <div style={{ maxWidth: '700px', margin: '0 auto', textAlign: 'center' }}>
+          <div style={{ fontSize: '18px', fontWeight: 'bold', color: '#fff', marginBottom: '6px' }}>🛡️ CareerTrust AI</div>
+          <p style={{ fontSize: '12.5px', margin: '0 0 14px' }}>Don't just detect scams. Make smarter career decisions.</p>
+          <div style={{ fontSize: '11px', opacity: 0.6 }}>
+            © 2026 CareerTrust AI. Built by Akash S.
+          </div>
+        </div>
       </div>
     </div>
   )
