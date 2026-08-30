@@ -1,3 +1,7 @@
+import csv
+import os
+from datetime import datetime
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
@@ -10,6 +14,7 @@ from .analysis import (
     SAFE_APPLY_CHECKLIST,
 )
 from .verification import verify_recruiter_email, verify_company_presence, check_suspicious_links
+from .companies import suggest_companies
 
 app = FastAPI(title="CareerTrust AI - Backend")
 
@@ -42,6 +47,7 @@ def analyze_opportunity(data: AnalyzeRequest):
 
     salary_info = analyze_salary(data.job_text)
     skill_info = analyze_skill_match(data.job_text, data.student_skills)
+    suggested_companies = suggest_companies(data.student_skills)
 
     recruiter_info = verify_recruiter_email(data.job_text, data.company_name)
     company_info = verify_company_presence(data.company_name)
@@ -59,9 +65,30 @@ def analyze_opportunity(data: AnalyzeRequest):
         "sensitive_data_check": sensitive_info,
         "salary_analysis": salary_info,
         "skill_match": skill_info,
+        "suggested_companies": suggested_companies,
         "recruiter_verification": recruiter_info,
         "company_verification": company_info,
         "link_check": link_info,
         "safe_apply_checklist": SAFE_APPLY_CHECKLIST,
         "disclaimer": "This score is an indication based on common scam patterns and typical ranges. It is not final legal or factual proof of fraud. Always verify independently before applying or paying any money.",
     }
+
+
+class SignupRequest(BaseModel):
+    name: str
+    email: str
+    phone: str = ""
+
+
+SIGNUP_FILE = os.path.join(os.path.dirname(__file__), "signups.csv")
+
+
+@app.post("/signup")
+def signup(data: SignupRequest):
+    file_exists = os.path.isfile(SIGNUP_FILE)
+    with open(SIGNUP_FILE, "a", newline="", encoding="utf-8") as f:
+        writer = csv.writer(f)
+        if not file_exists:
+            writer.writerow(["timestamp", "name", "email", "phone"])
+        writer.writerow([datetime.now().isoformat(timespec="seconds"), data.name, data.email, data.phone])
+    return {"status": "success", "message": "Thanks for signing up!"}
