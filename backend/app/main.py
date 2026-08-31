@@ -91,3 +91,11 @@ def signup(data: SignupRequest):
         writer = csv.writer(f)
         if not file_exists:
             writer.writerow(["timestamp", "name", "email", "phone"])
+
+class EmailCheckRequest(BaseModel):
+    email: str
+
+
+@app.post("/verify-email")
+def check_email(data: EmailCheckRequest):
+    return verify_email(data.email)
