@@ -15,6 +15,7 @@ from .analysis import (
 )
 from .verification import verify_recruiter_email, verify_company_presence, check_suspicious_links
 from .companies import suggest_companies
+from .email_check import verify_email
 
 app = FastAPI(title="CareerTrust AI - Backend")
 
@@ -90,5 +91,3 @@ def signup(data: SignupRequest):
         writer = csv.writer(f)
         if not file_exists:
             writer.writerow(["timestamp", "name", "email", "phone"])
-        writer.writerow([datetime.now().isoformat(timespec="seconds"), data.name, data.email, data.phone])
-    return {"status": "success", "message": "Thanks for signing up!"}
