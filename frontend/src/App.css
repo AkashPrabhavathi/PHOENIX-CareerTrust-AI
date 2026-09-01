@@ -117,3 +117,50 @@ input:focus, textarea:focus {
   0%, 80%, 100% { opacity: 0.2; }
   40% { opacity: 1; }
 }
+
+.mic-btn.listening {
+  animation: pulse 1s infinite;
+}
+@keyframes pulse {
+  0% { box-shadow: 0 0 0 0 rgba(198,40,40,0.5); }
+  70% { box-shadow: 0 0 0 10px rgba(198,40,40,0); }
+  100% { box-shadow: 0 0 0 0 rgba(198,40,40,0); }
+}
+
+/* Responsive typography — scales smoothly on mobile without touching JSX */
+h1 { font-size: clamp(24px, 6vw, 38px) !important; letter-spacing: -0.5px; line-height: 1.25 !important; }
+h2 { font-size: clamp(18px, 4vw, 24px) !important; letter-spacing: -0.3px; }
+h3 { font-size: clamp(15px, 3vw, 17px) !important; }
+p { line-height: 1.6; }
+
+/* Card and button micro-interactions */
+button {
+  transition: transform 0.15s ease, box-shadow 0.15s ease, opacity 0.15s ease !important;
+}
+button:active:not(:disabled) {
+  transform: scale(0.97) !important;
+}
+
+input, textarea {
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+input:focus, textarea:focus {
+  box-shadow: 0 0 0 3px rgba(2, 195, 154, 0.15);
+}
+
+/* Mobile tightening */
+@media (max-width: 480px) {
+  body { -webkit-text-size-adjust: 100%; }
+  table { font-size: 11px !important; }
+  th, td { padding: 6px !important; }
+}
+
+/* Smoother rendering overall */
+* {
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+::-webkit-scrollbar { width: 8px; height: 8px; }
+::-webkit-scrollbar-thumb { background: #02c39a; border-radius: 4px; }
+::-webkit-scrollbar-track { background: transparent; }
