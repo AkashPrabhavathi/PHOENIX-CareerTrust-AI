@@ -60,7 +60,50 @@ function getBotReply(text) {
   return "I'm not totally sure about that yet — try asking about risk score, scam signs, OTP, salary checks, or skill match."
 }
 
+// Small helper: fragments that fly inward and converge into an icon, replayed via `trigger` key
+function BuildFX({ count = 8, radius = 34, className, durationMs = 600 }) {
+  const shards = Array.from({ length: count })
+  return shards.map((_, i) => {
+    const angle = (i / count) * Math.PI * 2
+    const sx = Math.cos(angle) * radius
+    const sy = Math.sin(angle) * radius
+    return (
+      <span
+        key={i}
+        className={className}
+        style={{ '--sx': `${sx}px`, '--sy': `${sy}px`, animationDelay: `${i * 12}ms`, animationDuration: `${durationMs}ms` }}
+      />
+    )
+  })
+}
+
+function BuildIcon({ icon, trigger }) {
+  return (
+    <span className="build-icon-wrap" key={trigger}>
+      <BuildFX count={8} radius={26} className="build-shard" durationMs={550} />
+      <span className="build-icon-core">{icon}</span>
+    </span>
+  )
+}
+
+function SplashScreen({ visible }) {
+  return (
+    <div className={`splash-screen${visible ? '' : ' splash-out'}`}>
+      <div className="splash-logo-wrap">
+        <div className="splash-ring" />
+        <BuildFX count={10} radius={70} className="splash-shard" durationMs={900} />
+        <span className="splash-shield">🛡️</span>
+      </div>
+      <div className="splash-title">Career<span>Trust</span> AI</div>
+      <div className="splash-sub">Smart Career Safety</div>
+      <div className="splash-bar"><div className="splash-bar-fill" /></div>
+    </div>
+  )
+}
+
 function App() {
+  const [showSplash, setShowSplash] = useState(true)
+  const [splashFading, setSplashFading] = useState(false)
   const [page, setPage] = useState('login')
   const [lang, setLang] = useState('en')
   const L = T[lang]
@@ -97,6 +140,12 @@ function App() {
   const [botTyping, setBotTyping] = useState(false)
 
   const theme = darkMode ? darkTheme : lightTheme
+
+  useEffect(() => {
+    const t1 = setTimeout(() => setSplashFading(true), 2000)
+    const t2 = setTimeout(() => setShowSplash(false), 2500)
+    return () => { clearTimeout(t1); clearTimeout(t2) }
+  }, [])
 
   useEffect(() => {
     const saved = parseInt(localStorage.getItem('ct_report_count') || '1247', 10)
@@ -237,25 +286,32 @@ function App() {
 
   return (
     <div style={{ minHeight: '100vh', background: theme.pageBg, fontFamily: 'sans-serif', transition: 'background 0.3s ease', position: 'relative' }}>
+      {showSplash && <SplashScreen visible={!splashFading} />}
+
       {showConfetti && ['🎉', '✅', '🎊', '🟢', '✨', '🎉', '✅', '🎊'].map((e, i) => (
         <span key={i} className="confetti-piece" style={{ left: `${10 + i * 11}%`, animationDelay: `${i * 0.15}s` }}>{e}</span>
       ))}
 
-      <div className="no-print" style={{ background: 'linear-gradient(90deg, #028090, #02c39a)', padding: '14px 24px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', color: '#fff', boxShadow: '0 2px 8px rgba(0,0,0,0.15)', flexWrap: 'wrap', gap: '10px' }}>
-        <div style={{ fontSize: '20px', fontWeight: 'bold', cursor: 'pointer' }} onClick={() => setPage('login')}>🛡️ CareerTrust AI</div>
-        <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap', alignItems: 'center' }}>
-          <button onClick={() => setPage('login')} style={navBtn(page === 'login')}>{L.home}</button>
-          <button onClick={() => isLoggedIn ? setPage('form') : setPage('login')} style={navBtn(page === 'form')}>{L.details}</button>
-          <button onClick={() => result && setPage('result')} disabled={!result} style={{ ...navBtn(page === 'result'), opacity: result ? 1 : 0.5 }}>{L.result}</button>
-          <button onClick={() => isLoggedIn ? setPage('history') : setPage('login')} style={navBtn(page === 'history')}>{L.history}</button>
-          <button onClick={() => setPage('about')} style={navBtn(page === 'about')}>{L.about}</button>
-          <button onClick={() => isLoggedIn ? setPage('profile') : setPage('login')} style={navBtn(page === 'profile')}>{L.profile}</button>
+      <div className="no-print sidebar">
+        <div className="sidebar-brand" onClick={() => setPage('login')}>
+          <BuildIcon icon="🛡️" trigger={page} />
+          <span>CareerTrust AI</span>
+        </div>
+        <button onClick={() => setPage('login')} className="sidebar-nav-btn" style={navBtn(page === 'login')}>{L.home}</button>
+        <button onClick={() => isLoggedIn ? setPage('form') : setPage('login')} className="sidebar-nav-btn" style={navBtn(page === 'form')}>{L.details}</button>
+        <button onClick={() => result && setPage('result')} disabled={!result} className="sidebar-nav-btn" style={{ ...navBtn(page === 'result'), opacity: result ? 1 : 0.5 }}>{L.result}</button>
+        <button onClick={() => isLoggedIn ? setPage('history') : setPage('login')} className="sidebar-nav-btn" style={navBtn(page === 'history')}>{L.history}</button>
+        <button onClick={() => setPage('about')} className="sidebar-nav-btn" style={navBtn(page === 'about')}>{L.about}</button>
+        <button onClick={() => isLoggedIn ? setPage('profile') : setPage('login')} className="sidebar-nav-btn" style={navBtn(page === 'profile')}>{L.profile}</button>
+        <div className="sidebar-spacer" />
+        <div className="sidebar-bottom">
           <button onClick={() => setLang(lang === 'en' ? 'ta' : 'en')} style={{ background: 'rgba(255,255,255,0.2)', color: '#fff', border: '1px solid #fff', padding: '7px 12px', borderRadius: '20px', cursor: 'pointer', fontSize: '12px' }}>{lang === 'en' ? 'தமிழ்' : 'EN'}</button>
           <button onClick={() => setDarkMode(!darkMode)} style={{ background: 'rgba(255,255,255,0.2)', color: '#fff', border: '1px solid #fff', padding: '7px 12px', borderRadius: '20px', cursor: 'pointer', fontSize: '12px' }}>{darkMode ? '☀️' : '🌙'}</button>
-          {isLoggedIn && (<><span style={{ fontSize: '13px' }}>👋 {loginData.name}</span><button onClick={handleLogout} style={{ background: 'rgba(255,255,255,0.2)', color: '#fff', border: '1px solid #fff', padding: '7px 12px', borderRadius: '20px', cursor: 'pointer', fontSize: '12px' }}>{L.logout}</button></>)}
+          {isLoggedIn && (<><span style={{ fontSize: '12px', color: '#fff' }}>👋 {loginData.name}</span><button onClick={handleLogout} style={{ background: 'rgba(255,255,255,0.2)', color: '#fff', border: '1px solid #fff', padding: '7px 12px', borderRadius: '20px', cursor: 'pointer', fontSize: '12px' }}>{L.logout}</button></>)}
         </div>
       </div>
 
+      <div className="main-with-sidebar">
       {page === 'login' && (
         <div key="login" className="page-fade">
           <div className="no-print" style={{ textAlign: 'center', padding: '48px 20px 24px' }}>
@@ -460,6 +516,8 @@ function App() {
           </div>
         </div>
       )}
+
+      </div>
 
       <div className="no-print" style={{ background: '#0b2e33', color: '#cadcda', padding: '24px 20px', marginTop: '20px' }}>
         <div style={{ maxWidth: '700px', margin: '0 auto', textAlign: 'center' }}>
