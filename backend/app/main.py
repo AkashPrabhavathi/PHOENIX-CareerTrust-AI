@@ -5,6 +5,8 @@ from datetime import datetime
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
+from dotenv import load_dotenv
+from openai import OpenAI
 
 from .rules import detect_scam_signals, calculate_risk_score, get_risk_level, detect_sensitive_info
 from .analysis import (
@@ -16,6 +18,8 @@ from .analysis import (
 from .verification import verify_recruiter_email, verify_company_presence, check_suspicious_links
 from .companies import suggest_companies
 from .email_check import verify_email
+
+load_dotenv()
 
 app = FastAPI(title="CareerTrust AI - Backend")
 
@@ -99,3 +103,49 @@ class EmailCheckRequest(BaseModel):
 @app.post("/verify-email")
 def check_email(data: EmailCheckRequest):
     return verify_email(data.email)
+
+openai_client = None
+_api_key = os.getenv("OPENAI_API_KEY")
+if _api_key:
+    openai_client = OpenAI(api_key=_api_key)
+
+SYSTEM_PROMPT = (
+    "You are the CareerTrust AI assistant, embedded in a website that helps students "
+    "detect scam job/internship offers and evaluate career opportunities. "
+    "Answer questions about scam warning signs, risk scores, OTP/payment red flags, "
+    "salary checks, skill matching, and general career/job-search safety advice. "
+    "Keep answers concise (2-5 sentences), friendly, and practical. "
+    "If asked something totally unrelated, answer briefly and steer back to career safety topics."
+)
+
+
+class ChatRequest(BaseModel):
+    message: str
+    history: list[dict] = []  
+
+
+@app.post("/chat")
+def chat(data: ChatRequest):
+    if not openai_client:
+        return {
+            "reply": "AI chat isn't configured yet. Add OPENAI_API_KEY to the backend .env file to enable it.",
+            "error": "missing_api_key",
+        }
+
+    messages = [{"role": "system", "content": SYSTEM_PROMPT}]
+    for m in data.history[-10:]:
+        role = "assistant" if m.get("role") == "assistant" else "user"
+        messages.append({"role": role, "content": m.get("content", "")})
+    messages.append({"role": "user", "content": data.message})
+
+    try:
+        response = openai_client.chat.completions.create(
+            model="gpt-4o-mini",
+            messages=messages,
+            max_tokens=300,
+            temperature=0.6,
+        )
+        reply = response.choices[0].message.content
+        return {"reply": reply}
+    except Exception as e:
+        return {"reply": "Sorry, I couldn't reach the AI service right now. Please try again in a moment.", "error": str(e)}

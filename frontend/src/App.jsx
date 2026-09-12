@@ -44,20 +44,71 @@ const FAQS = [
   ['Can I upload a screenshot instead of typing?', 'Yes — upload a WhatsApp or email screenshot and the app will automatically extract the text using OCR.'],
 ]
 
-function getBotReply(text) {
-  const t = text.toLowerCase()
-  if (/\b(hi|hello|hey)\b/.test(t)) return "Hi! I'm the CareerTrust AI assistant. Ask me about risk scores, scam signs, OTP requests, salary checks, or skill match."
-  if (t.includes('risk score')) return 'The risk score (0–100) is based on common scam patterns found in the text — registration fees, OTP requests, urgent payment pressure, and more.'
-  if (t.includes('scam')) return 'We check for 13+ scam patterns like registration fees, guaranteed job claims, personal email domains, and urgent payment pressure.'
-  if (t.includes('otp')) return 'Never share your OTP with a recruiter. No legitimate employer will ever ask for it.'
-  if (t.includes('fee') || t.includes('payment') || t.includes('money')) return 'Legitimate employers do not charge registration, processing, or training fees.'
-  if (t.includes('salary') || t.includes('stipend')) return 'We compare the offered salary against a typical range for that role type.'
-  if (t.includes('skill')) return 'We match your listed skills against the job text and show your match %, matched skills, and missing skills.'
-  if (t.includes('company') || t.includes('recruiter')) return 'We check if the recruiter uses a personal email vs a company domain, and give guidance to verify the company.'
-  if (t.includes('privacy') || t.includes('data') || t.includes('store')) return 'Your job text is not stored beyond your session.'
-  if (t.includes('screenshot') || t.includes('ocr')) return 'Yes — upload a screenshot on the Details page and the text will be extracted automatically.'
-  if (t.includes('thank')) return "You're welcome! Stay safe out there. 🛡️"
-  return "I'm not totally sure about that yet — try asking about risk score, scam signs, OTP, salary checks, or skill match."
+function getBotReply(text, history = []) {
+  const t = text.toLowerCase().trim()
+
+  const has = (...words) => words.some((w) => t.includes(w))
+  const pick = (arr) => arr[Math.floor(Math.random() * arr.length)]
+
+  if (/^(hi|hello|hey|hai|vanakkam)\b/.test(t)) {
+    return pick([
+      "Hi! I'm the CareerTrust AI assistant 🛡️. Ask me about scam signs, risk scores, OTP requests, salary checks, or skill matching.",
+      "Hello! I can help you spot fake job offers and understand your report. What would you like to know?",
+    ])
+  }
+
+  if (has('risk score', 'risk level'))
+    return "The risk score (0–100) is based on common scam patterns found in the text — registration fees, OTP requests, urgent payment pressure, personal email domains, and more. Higher score = more red flags found. It's a guide, not final proof."
+
+  if (has('opportunity score'))
+    return "The Opportunity Score (0–100) looks at the overall quality of the offer — how well your skills match, whether the salary looks fair, and how low the risk is. Higher is better."
+
+  if (has('scam', 'fraud', 'fake job', 'fake offer'))
+    return "We check for 13+ scam patterns: registration/training fees, guaranteed-job promises, personal email domains (gmail/yahoo instead of a company domain), urgent payment pressure, and requests for sensitive info. Any of these showing up is a red flag — verify before proceeding."
+
+  if (has('otp', 'one time password'))
+    return "Never share your OTP with a recruiter or anyone claiming to be from HR. No legitimate employer will ever ask for it — this is one of the most common scam tactics."
+
+  if (has('fee', 'payment', 'money', 'deposit', 'pay '))
+    return "Legitimate employers never charge registration, training, security deposit, or 'processing' fees. If a job asks you to pay anything upfront, treat it as a major red flag."
+
+  if (has('salary', 'stipend', 'pay range', 'ctc'))
+    return "We compare the offered salary against a typical market range for that role type. If the offer looks unusually high for very little work or experience, that's often a scam lure."
+
+  if (has('skill', 'match'))
+    return "We match your listed skills against the job text and show your match %, which skills matched, and which ones you're missing — so you know what to learn for that role."
+
+  if (has('company', 'recruiter', 'hr', 'employer'))
+    return "We check whether the recruiter's email uses a personal domain (gmail/yahoo) vs an official company domain, and give you steps to independently verify the company (LinkedIn, official website, Glassdoor reviews)."
+
+  if (has('privacy', 'data', 'store', 'save my'))
+    return "Your job text isn't stored anywhere beyond your current session/history on this device. Sign-up details are only used for basic account tracking."
+
+  if (has('screenshot', 'ocr', 'image', 'upload'))
+    return "Yes — on the Details page, upload a WhatsApp or email screenshot and the app automatically extracts the text using OCR, so you don't have to type it manually."
+
+  if (has('history', 'past report', 'previous'))
+    return "Your past reports are saved under the History page — you can revisit any analysis, compare opportunities side by side, or clear your history anytime."
+
+  if (has('free', 'cost', 'price', 'paid'))
+    return "CareerTrust AI is completely free to use — analyzing offers, checking risk scores, and using every feature here doesn't cost anything."
+
+  if (has('how does this work', 'how it works', 'how do you'))
+    return "Simple: paste (or screenshot) the job/internship message, add your skills, and we scan it for scam patterns, verify the salary and recruiter, and match your skills — all in a few seconds."
+
+  if (has('safe', 'checklist', 'apply'))
+    return "Check the 'Safe Apply Checklist' in your report — it lists practical steps like verifying the company online, never paying upfront, and confirming the recruiter's identity before proceeding."
+
+  if (has('thank'))
+    return pick(["You're welcome! Stay safe out there. 🛡️", "Anytime! Good luck with your job search."])
+
+  if (has('bye', 'exit', 'quit'))
+    return "Take care! Come back anytime you want a job offer checked. 🛡️"
+
+  return pick([
+    "I'm not fully sure about that yet — try asking about risk score, scam signs, OTP requests, salary checks, or skill matching.",
+    "Good question! I mainly help with career-safety topics — scam detection, salary checks, skill match, and recruiter verification. Ask me about any of those.",
+  ])
 }
 
 // Small helper: fragments that fly inward and converge into an icon, replayed via `trigger` key
@@ -122,7 +173,7 @@ function App() {
   const [memberSince, setMemberSince] = useState('')
   const [defaultSkills, setDefaultSkills] = useState('')
 
-  const [ocrLoading, setOcrLoading] = useState(false)
+  const [loginLoading, setLoginLoading] = useState(false)
   const [ocrProgress, setOcrProgress] = useState(0)
   const [listening, setListening] = useState(false)
   const recognitionRef = useRef(null)
@@ -180,13 +231,35 @@ function App() {
   const handleLogin = async () => {
     if (!loginData.name || !loginData.email) { setLoginStatus('Please enter your name and email.'); return }
     if (!isValidEmail(loginData.email)) { setLoginStatus('Please enter a valid email address.'); return }
+
+    setLoginLoading(true)
+    setLoginStatus('Verifying email...')
     try {
-      const res = await fetch('http://127.0.0.1:8000/verify-email', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email: loginData.email }) })
+      const res = await fetch('http://127.0.0.1:8000/verify-email', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: loginData.email })
+      })
       const data = await res.json()
-      if (!data.valid) { setLoginStatus(data.reason || 'Please enter a valid email address.'); return }
+      if (!data.valid) {
+        setLoginStatus(data.reason || 'Please enter a valid email address.')
+        setLoginLoading(false)
+        return
+      }
+    } catch (error) {
+      setLoginStatus('⚠️ Could not reach server — continuing with basic validation only.')
+    }
+
+    try {
+      await fetch('http://127.0.0.1:8000/signup', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(loginData)
+      })
     } catch (error) {}
-    try { await fetch('http://127.0.0.1:8000/signup', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(loginData) }) } catch (error) {}
+
     setLoginStatus('')
+    setLoginLoading(false)
     setIsLoggedIn(true)
     const since = localStorage.getItem('ct_member_since') || new Date().toLocaleDateString()
     localStorage.setItem('ct_member_since', since)
@@ -274,11 +347,26 @@ function App() {
   const getRiskEmoji = (level) => level === 'Low Risk' ? '😊' : level === 'Needs Verification' ? '🤔' : level === 'High Risk' ? '⚠️' : level === 'Very High Risk' ? '🚨' : '❓'
   const getRecommendation = (entry) => entry.risk_score >= 61 ? 'Avoid until verified' : entry.risk_score >= 31 ? 'Apply with caution, verify first' : entry.opportunity_score >= 70 ? 'Recommended' : 'Worth applying after verification'
 
-  const handleChatSend = () => {
+  const handleChatSend = async () => {
     const text = chatInput.trim(); if (!text) return
     const newMessages = [...chatMessages, { sender: 'user', text }]
     setChatMessages(newMessages); setChatInput(''); setBotTyping(true)
-    setTimeout(() => { setChatMessages([...newMessages, { sender: 'bot', text: getBotReply(text) }]); setBotTyping(false) }, 700)
+    let replyText = null
+    try {
+      const history = newMessages.map((m) => ({ role: m.sender === 'user' ? 'user' : 'assistant', content: m.text }))
+      const res = await fetch('http://127.0.0.1:8000/chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ message: text, history }),
+      })
+      const data = await res.json()
+      if (data.reply && !data.error) replyText = data.reply
+    } catch (error) { /* backend not reachable, fall back below */ }
+    if (!replyText) replyText = getBotReply(text, chatMessages)
+    setTimeout(() => {
+      setChatMessages([...newMessages, { sender: 'bot', text: replyText }])
+      setBotTyping(false)
+    }, 500)
   }
 
   const cardStyle = { background: theme.cardBg, border: `1px solid ${theme.border}`, borderRadius: '8px', padding: '12px', marginBottom: '10px' }
@@ -314,7 +402,10 @@ function App() {
       <div className="main-with-sidebar">
       {page === 'login' && (
         <div key="login" className="page-fade">
-          <div className="no-print" style={{ textAlign: 'center', padding: '48px 20px 24px' }}>
+          <div className="no-print hero-blobs">
+            <div className="hero-blob b1" /><div className="hero-blob b2" /><div className="hero-blob b3" />
+          </div>
+          <div className="no-print hero-content" style={{ textAlign: 'center', padding: '48px 20px 24px' }}>
             <div style={{ display: 'inline-block', background: darkMode ? '#0f3339' : '#e0f7f1', color: '#02c39a', padding: '6px 16px', borderRadius: '20px', fontSize: '12px', fontWeight: 'bold', marginBottom: '16px' }}>{L.heroBadge}</div>
             <h1 style={{ color: theme.text, fontSize: '38px', fontWeight: 800, marginBottom: '10px', lineHeight: 1.2 }}>{L.heroLine1}<br /><span style={{ background: 'linear-gradient(90deg, #028090, #02c39a)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>{L.heroLine2}</span></h1>
             <p style={{ color: theme.muted, fontSize: '15px', maxWidth: '480px', margin: '0 auto' }}>{L.heroSub}</p>
@@ -323,23 +414,26 @@ function App() {
               <div style={{ textAlign: 'center' }}><div style={{ fontSize: '24px', fontWeight: 800, color: '#02c39a' }}>{displayCount.toLocaleString()}</div><div style={{ fontSize: '11px', color: theme.muted }}>{L.statReports}</div></div>
               <div style={{ textAlign: 'center' }}><div style={{ fontSize: '24px', fontWeight: 800, color: '#02c39a' }}>100%</div><div style={{ fontSize: '11px', color: theme.muted }}>{L.statFree}</div></div>
             </div>
-            <button onClick={() => document.getElementById('login-card').scrollIntoView({ behavior: 'smooth' })} style={{ marginTop: '28px', background: 'linear-gradient(90deg, #028090, #02c39a)', color: '#fff', border: 'none', padding: '14px 32px', borderRadius: '30px', fontWeight: 'bold', fontSize: '15px', cursor: 'pointer' }}>{L.getStarted}</button>
+            <button onClick={() => document.getElementById('login-card').scrollIntoView({ behavior: 'smooth' })} className="ui-btn-primary" style={{ marginTop: '28px', background: 'linear-gradient(90deg, #028090, #02c39a)', color: '#fff', border: 'none', padding: '14px 32px', borderRadius: '30px', fontWeight: 'bold', fontSize: '15px', cursor: 'pointer' }}>{L.getStarted}</button>
           </div>
 
-          <div id="login-card" style={{ maxWidth: '400px', margin: '20px auto 40px', background: theme.cardBg, borderRadius: '16px', padding: '26px', boxShadow: '0 10px 30px rgba(0,0,0,0.1)' }}>
+          <div id="login-card" className="ui-card" style={{ maxWidth: '400px', margin: '20px auto 40px', background: theme.cardBg, borderRadius: '16px', padding: '26px', boxShadow: '0 10px 30px rgba(0,0,0,0.1)' }}>
             <h3 style={{ marginTop: 0, color: theme.text, textAlign: 'center' }}>{L.loginTitle}</h3>
             <p style={{ fontSize: '12px', color: theme.muted, textAlign: 'center', marginTop: '-6px' }}>{L.loginSub}</p>
             <input type="text" placeholder={L.namePh} value={loginData.name} onChange={(e) => setLoginData({ ...loginData, name: e.target.value })} style={{ width: '100%', padding: '10px', marginBottom: '10px', borderRadius: '8px', border: '1px solid #ccc' }} />
             <input type="email" placeholder={L.emailPh} value={loginData.email} onChange={(e) => setLoginData({ ...loginData, email: e.target.value })} style={{ width: '100%', padding: '10px', marginBottom: '10px', borderRadius: '8px', border: '1px solid #ccc' }} />
             <input type="text" placeholder={L.phonePh} value={loginData.phone} onChange={(e) => setLoginData({ ...loginData, phone: e.target.value })} style={{ width: '100%', padding: '10px', marginBottom: '14px', borderRadius: '8px', border: '1px solid #ccc' }} />
-            <button onClick={handleLogin} style={{ width: '100%', background: '#02c39a', color: '#fff', border: 'none', padding: '13px', borderRadius: '8px', fontWeight: 'bold', cursor: 'pointer' }}>{L.loginBtn}</button>
+            <button onClick={handleLogin} disabled={loginLoading} className="ui-btn-primary" style={{ width: '100%', background: 'linear-gradient(90deg, #028090, #02c39a)', color: '#fff', border: 'none', padding: '13px', borderRadius: '8px', fontWeight: 'bold', cursor: loginLoading ? 'not-allowed' : 'pointer', opacity: loginLoading ? 0.7 : 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}>
+              {loginLoading && <span className="spinner" />}
+              {loginLoading ? 'Verifying...' : L.loginBtn}
+            </button>
             {loginStatus && <p style={{ marginTop: '10px', color: '#c62828', fontSize: '13px', textAlign: 'center' }}>{loginStatus}</p>}
           </div>
 
           <div className="no-print" style={{ maxWidth: '700px', margin: '0 auto 40px', padding: '0 16px' }}>
             <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap', justifyContent: 'center' }}>
               {[['1️⃣', 'Login', 'Quick free sign-in to get started'], ['2️⃣', 'Add Details', 'Paste the offer, upload a screenshot, add your skills'], ['3️⃣', 'Get Your Report', 'A clear risk score with evidence and next steps']].map((step, i) => (
-                <div key={i} style={{ flex: '1', minWidth: '180px', background: theme.cardBg, borderRadius: '12px', padding: '16px', textAlign: 'center', boxShadow: '0 4px 14px rgba(0,0,0,0.06)' }}>
+                <div key={i} className="step-card" style={{ flex: '1', minWidth: '180px', background: theme.cardBg, borderRadius: '12px', padding: '16px', textAlign: 'center', boxShadow: '0 4px 14px rgba(0,0,0,0.06)' }}>
                   <div style={{ fontSize: '22px', marginBottom: '6px' }}>{step[0]}</div>
                   <div style={{ fontWeight: 'bold', color: theme.text, fontSize: '13.5px', marginBottom: '4px' }}>{step[1]}</div>
                   <div style={{ fontSize: '11.5px', color: theme.muted }}>{step[2]}</div>
@@ -351,7 +445,7 @@ function App() {
           <div className="no-print" style={{ maxWidth: '700px', margin: '0 auto', padding: '0 16px 50px' }}>
             <h2 style={{ textAlign: 'center', color: theme.text, marginBottom: '20px' }}>Frequently Asked Questions</h2>
             {FAQS.map((faq, i) => (
-              <div key={i} style={{ background: theme.cardBg, borderRadius: '10px', marginBottom: '10px', overflow: 'hidden', boxShadow: '0 2px 8px rgba(0,0,0,0.05)' }}>
+              <div key={i} className="faq-item" style={{ background: theme.cardBg, borderRadius: '10px', marginBottom: '10px', overflow: 'hidden', boxShadow: '0 2px 8px rgba(0,0,0,0.05)' }}>
                 <div onClick={() => setOpenFaq(openFaq === i ? null : i)} style={{ padding: '14px 18px', cursor: 'pointer', display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontWeight: 'bold', color: theme.text, fontSize: '14px' }}>{faq[0]}<span style={{ color: '#02c39a' }}>{openFaq === i ? '−' : '+'}</span></div>
                 {openFaq === i && <div style={{ padding: '0 18px 16px', color: theme.muted, fontSize: '13px' }}>{faq[1]}</div>}
               </div>
@@ -364,7 +458,7 @@ function App() {
         <div key="form" className="page-fade" style={{ maxWidth: '650px', margin: '0 auto', padding: '40px 16px' }}>
           <h1 style={{ color: theme.text, fontSize: '26px', textAlign: 'center', marginBottom: '6px' }}>{L.formTitle}</h1>
           <p style={{ color: theme.muted, textAlign: 'center', marginBottom: '26px' }}>{L.formSub}</p>
-          <div style={{ background: theme.cardBg, borderRadius: '14px', padding: '22px', boxShadow: '0 8px 24px rgba(0,0,0,0.08)' }}>
+          <div className="ui-card" style={{ background: theme.cardBg, borderRadius: '14px', padding: '22px', boxShadow: '0 8px 24px rgba(0,0,0,0.08)' }}>
             <label style={{ fontWeight: 'bold', color: theme.text }}>{L.companyLabel}</label>
             <input type="text" style={{ width: '100%', marginBottom: '14px', padding: '10px', borderRadius: '8px', border: '1px solid #ccc', marginTop: '6px' }} value={companyName} onChange={(e) => setCompanyName(e.target.value)} placeholder="e.g. Wipro, Infosys" />
             <label style={{ fontWeight: 'bold', color: theme.text }}>{L.screenshotLabel}</label>
@@ -384,7 +478,7 @@ function App() {
             <input type="text" style={{ width: '100%', marginBottom: '20px', padding: '10px', borderRadius: '8px', border: '1px solid #ccc', marginTop: '6px' }} value={skills} onChange={(e) => setSkills(e.target.value)} placeholder="e.g. React, Python, SQL" />
             <div style={{ display: 'flex', gap: '10px' }}>
               <button onClick={() => setPage('login')} style={{ flex: '0 0 auto', background: 'transparent', color: theme.text, border: `1px solid ${theme.border}`, padding: '14px 18px', borderRadius: '10px', fontWeight: 'bold', cursor: 'pointer' }}>{L.back}</button>
-              <button onClick={handleAnalyze} disabled={loading || !jobText} style={{ flex: 1, background: 'linear-gradient(90deg, #028090, #02c39a)', color: '#fff', border: 'none', padding: '14px', borderRadius: '10px', fontWeight: 'bold', fontSize: '15px', cursor: 'pointer', opacity: loading || !jobText ? 0.6 : 1, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <button onClick={handleAnalyze} disabled={loading || !jobText} className="ui-btn-primary" style={{ flex: 1, background: 'linear-gradient(90deg, #028090, #02c39a)', color: '#fff', border: 'none', padding: '14px', borderRadius: '10px', fontWeight: 'bold', fontSize: '15px', cursor: 'pointer', opacity: loading || !jobText ? 0.6 : 1, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                 {loading && <span className="spinner"></span>}{loading ? 'Analyzing...' : L.analyzeBtn}
               </button>
             </div>

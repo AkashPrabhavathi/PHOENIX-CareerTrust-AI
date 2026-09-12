@@ -72,6 +72,7 @@ input:focus, textarea:focus {
 }
 .page-fade {
   animation: fadeIn 0.4s ease;
+  position: relative;
 }
 
 @keyframes fadeIn {
@@ -126,10 +127,14 @@ input:focus, textarea:focus {
   70% { box-shadow: 0 0 0 10px rgba(198,40,40,0); }
   100% { box-shadow: 0 0 0 0 rgba(198,40,40,0); }
 }
+
+/* Responsive typography — scales smoothly on mobile without touching JSX */
 h1 { font-size: clamp(24px, 6vw, 38px) !important; letter-spacing: -0.5px; line-height: 1.25 !important; }
 h2 { font-size: clamp(18px, 4vw, 24px) !important; letter-spacing: -0.3px; }
 h3 { font-size: clamp(15px, 3vw, 17px) !important; }
 p { line-height: 1.6; }
+
+/* Card and button micro-interactions */
 button {
   transition: transform 0.15s ease, box-shadow 0.15s ease, opacity 0.15s ease !important;
 }
@@ -143,11 +148,15 @@ input, textarea {
 input:focus, textarea:focus {
   box-shadow: 0 0 0 3px rgba(2, 195, 154, 0.15);
 }
+
+/* Mobile tightening */
 @media (max-width: 480px) {
   body { -webkit-text-size-adjust: 100%; }
   table { font-size: 11px !important; }
   th, td { padding: 6px !important; }
 }
+
+/* Smoother rendering overall */
 * {
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
@@ -259,6 +268,8 @@ input:focus, textarea:focus {
 @keyframes splashLoad {
   to { width: 100%; }
 }
+
+/* ===================== BUILD-IN ICON (used in sidebar / on page change) ===================== */
 .build-icon-wrap {
   position: relative;
   display: inline-flex;
@@ -291,6 +302,8 @@ input:focus, textarea:focus {
   0% { opacity: 1; transform: translate(var(--sx), var(--sy)) scale(1); }
   100% { opacity: 0; transform: translate(0, 0) scale(0.2); }
 }
+
+/* ===================== LEFT SIDEBAR LAYOUT ===================== */
 .sidebar {
   position: fixed;
   top: 0;
@@ -356,4 +369,80 @@ input:focus, textarea:focus {
   .sidebar-bottom { flex-direction: row; border-top: none; padding-top: 0; margin-top: 0; }
   .sidebar-nav-btn { white-space: nowrap; }
   .main-with-sidebar { margin-left: 0; padding-bottom: 74px; }
+}
+
+/* ===================== POLISHED UI: CARDS, HERO, BUTTONS ===================== */
+.ui-card {
+  backdrop-filter: blur(6px);
+  border: 1px solid rgba(2, 195, 154, 0.12);
+  transition: transform 0.25s ease, box-shadow 0.25s ease, border-color 0.25s ease;
+}
+.ui-card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 14px 34px rgba(2, 128, 144, 0.16) !important;
+  border-color: rgba(2, 195, 154, 0.35);
+}
+.ui-btn-primary {
+  position: relative;
+  overflow: hidden;
+  transition: transform 0.18s ease, box-shadow 0.18s ease, filter 0.18s ease;
+}
+.ui-btn-primary:hover:not(:disabled) {
+  filter: brightness(1.08);
+  box-shadow: 0 10px 24px rgba(2, 195, 154, 0.35) !important;
+}
+.ui-btn-primary::after {
+  content: '';
+  position: absolute;
+  top: 0; left: -60%;
+  width: 40%; height: 100%;
+  background: linear-gradient(120deg, transparent, rgba(255,255,255,0.35), transparent);
+  transform: skewX(-20deg);
+  transition: left 0.5s ease;
+}
+.ui-btn-primary:hover::after { left: 130%; }
+
+.sidebar-nav-btn:hover:not(:disabled) {
+  background: rgba(255,255,255,0.28) !important;
+  transform: translateX(3px);
+}
+
+/* Animated background blobs behind hero */
+.hero-blobs {
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 480px;
+  overflow: hidden;
+  z-index: 0;
+  pointer-events: none;
+}
+.hero-blob {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(50px);
+  opacity: 0.35;
+  animation: blobFloat 14s ease-in-out infinite;
+}
+.hero-blob.b1 { width: 260px; height: 260px; background: #02c39a; top: -60px; left: 6%; animation-delay: 0s; }
+.hero-blob.b2 { width: 320px; height: 320px; background: #028090; top: 40px; right: 8%; animation-delay: 3s; }
+.hero-blob.b3 { width: 200px; height: 200px; background: #7b1fa2; opacity: 0.18; top: 220px; left: 40%; animation-delay: 6s; }
+@keyframes blobFloat {
+  0%, 100% { transform: translate(0, 0) scale(1); }
+  50% { transform: translate(20px, 30px) scale(1.12); }
+}
+.hero-content { position: relative; z-index: 1; }
+
+.faq-item {
+  transition: box-shadow 0.2s ease, transform 0.2s ease;
+}
+.faq-item:hover {
+  box-shadow: 0 6px 18px rgba(0,0,0,0.09) !important;
+}
+
+.step-card {
+  transition: transform 0.22s ease, box-shadow 0.22s ease;
+}
+.step-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 10px 24px rgba(2, 128, 144, 0.14) !important;
 }
