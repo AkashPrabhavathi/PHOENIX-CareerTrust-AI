@@ -356,6 +356,16 @@ body {
   margin-left: 210px;
   min-height: 100vh;
   width: calc(100% - 210px);
+  max-width: calc(100% - 210px);
+  overflow-x: hidden;
+}
+@media (max-width: 780px) {
+  .main-with-sidebar {
+    margin-left: 0;
+    width: 100%;
+    max-width: 100%;
+    padding-bottom: 74px;
+  }
 }
 @media (max-width: 780px) {
   .sidebar {

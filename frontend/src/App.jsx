@@ -263,7 +263,7 @@ function App() {
     if (!isValidEmail(loginData.email)) { setLoginStatus('Please enter a valid email address.'); return }
 
     if (!otpSent) {
-  
+
       setLoginLoading(true)
       setLoginStatus('Sending OTP to your email...')
       try {
@@ -554,7 +554,7 @@ function App() {
   const navBtn = (active) => ({ background: active ? '#fff' : 'rgba(255,255,255,0.15)', color: active ? '#028090' : '#fff', border: '1px solid rgba(255,255,255,0.6)', padding: '7px 12px', borderRadius: '20px', cursor: 'pointer', fontSize: '12px', fontWeight: active ? 'bold' : 'normal' })
 
   return (
-    <div style={{ minHeight: '100vh', background: theme.pageBg, fontFamily: 'sans-serif', transition: 'background 0.3s ease', position: 'relative' }}>
+    <div style={{ minHeight: '100vh', width: '100vw', overflowX: 'hidden', background: theme.pageBg, fontFamily: 'sans-serif', transition: 'background 0.3s ease', position: 'relative' }}>
       {showSplash && <SplashScreen visible={!splashFading} />}
 
       {showConfetti && ['🎉', '✅', '🎊', '🟢', '✨', '🎉', '✅', '🎊'].map((e, i) => (
@@ -896,6 +896,7 @@ function App() {
           <h1 style={{ color: theme.text, fontSize: '26px', marginBottom: '6px' }}>🚀 Career Guide</h1>
           <p style={{ color: theme.muted, marginBottom: '28px' }}>Skill roadmaps, salary insights, and career paths for students in India.</p>
 
+          {/* Salary Insights */}
           <div className="ui-card" style={{ background: theme.cardBg, borderRadius: '14px', padding: '20px', marginBottom: '20px', boxShadow: '0 4px 14px rgba(0,0,0,0.07)' }}>
             <h3 style={{ color: '#02c39a', marginTop: 0 }}>💰 Fresher Salary Range (India 2026)</h3>
             <div style={{ overflowX: 'auto' }}>
