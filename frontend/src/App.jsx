@@ -991,7 +991,7 @@ function App() {
       <div className="no-print" style={{ background: '#0b2e33', color: '#cadcda', padding: '24px 20px', marginTop: '20px' }}>
         <div style={{ maxWidth: '700px', margin: '0 auto', textAlign: 'center' }}>
           <div style={{ fontSize: '16px', fontWeight: 'bold', color: '#fff', marginBottom: '6px' }}>🛡️ CareerTrust AI</div>
-          <div style={{ fontSize: '11px', opacity: 0.6 }}>© 2026 CareerTrust AI. Built by Akash S.</div>
+          <div style={{ fontSize: '11px', opacity: 0.6 }}>© 2026 CareerTrust AI. Built by Akash.</div>
         </div>
       </div>
 
