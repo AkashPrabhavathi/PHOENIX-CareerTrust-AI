@@ -111,7 +111,6 @@ function getBotReply(text, history = []) {
   ])
 }
 
-// Small helper: fragments that fly inward and converge into an icon, replayed via `trigger` key
 function BuildFX({ count = 8, radius = 34, className, durationMs = 600 }) {
   const shards = Array.from({ length: count })
   return shards.map((_, i) => {
@@ -153,6 +152,7 @@ function SplashScreen({ visible }) {
 }
 
 function App() {
+  const API = import.meta.env.VITE_BACKEND_URL || 'http://127.0.0.1:8000'
   const [showSplash, setShowSplash] = useState(true)
   const [splashFading, setSplashFading] = useState(false)
   const [page, setPage] = useState('login')
@@ -199,7 +199,7 @@ function App() {
     try {
       const formData = new FormData()
       formData.append('file', file)
-      const res = await fetch('http://127.0.0.1:8000/parse-resume', { method: 'POST', body: formData })
+      const res = await fetch(API + '/parse-resume', { method: 'POST', body: formData })
       const data = await res.json()
       if (data.error) { alert(data.error); setResumeLoading(false); return }
       setResumeSkills(data.skills || [])
@@ -263,11 +263,11 @@ function App() {
     if (!isValidEmail(loginData.email)) { setLoginStatus('Please enter a valid email address.'); return }
 
     if (!otpSent) {
-      // Step 1: Send OTP
+  
       setLoginLoading(true)
       setLoginStatus('Sending OTP to your email...')
       try {
-        const res = await fetch('http://127.0.0.1:8000/send-otp', {
+        const res = await fetch(API + '/send-otp', {
           method: 'POST', headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ email: loginData.email, name: loginData.name })
         })
@@ -291,12 +291,11 @@ function App() {
       setLoginLoading(false)
       return
     }
-
     if (!otpValue) { setLoginStatus('Please enter the OTP sent to your email.'); return }
     setLoginLoading(true)
     setLoginStatus('Verifying OTP...')
     try {
-      const res = await fetch('http://127.0.0.1:8000/verify-otp', {
+      const res = await fetch(API + '/verify-otp', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email: loginData.email, otp: otpValue })
       })
@@ -304,7 +303,7 @@ function App() {
       if (!data.valid) { setLoginStatus(data.reason || 'Invalid OTP.'); setLoginLoading(false); return }
     } catch (err) { setLoginStatus('⚠️ Could not verify OTP.'); setLoginLoading(false); return }
 
-    try { await fetch('http://127.0.0.1:8000/signup', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(loginData) }) } catch (e) {}
+    try { await fetch(API + '/signup', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(loginData) }) } catch (e) {}
     setLoginStatus('')
     setLoginLoading(false)
     setIsLoggedIn(true)
@@ -318,7 +317,7 @@ function App() {
   const fetchScamNews = async () => {
     setNewsLoading(true)
     try {
-      const res = await fetch('http://127.0.0.1:8000/scam-news')
+      const res = await fetch(API + '/scam-news')
       const data = await res.json()
       setScamNews(data.articles || [])
     } catch (e) { setScamNews([]) }
@@ -337,7 +336,7 @@ function App() {
   const handleAnalyze = async () => {
     setLoading(true); setResult(null)
     try {
-      const response = await fetch('http://127.0.0.1:8000/analyze', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ job_text: jobText, student_skills: skills, company_name: companyName }) })
+      const response = await fetch(API + '/analyze', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ job_text: jobText, student_skills: skills, company_name: companyName }) })
       const data = await response.json()
       setResult(data)
       const newCount = reportCount + 1
@@ -437,7 +436,6 @@ function App() {
     ctx.lineWidth = 1
     ctx.beginPath(); ctx.moveTo(40, 150); ctx.lineTo(760, 150); ctx.stroke()
 
-  
     const riskColor = result.risk_level === 'Low Risk' ? '#2e7d32' : result.risk_level === 'Needs Verification' ? '#f9a825' : result.risk_level === 'High Risk' ? '#ef6c00' : '#c62828'
     ctx.fillStyle = riskColor
     roundRect(ctx, 40, 165, 340, 110, 12)
@@ -462,7 +460,6 @@ function App() {
     ctx.font = '14px sans-serif'
     ctx.fillText('Overall quality of this offer', 440, 262)
 
-    // Stats row
     ctx.font = '14px sans-serif'
     ctx.fillStyle = '#8fa6a3'
     ctx.fillText('Scam Indicators', 40, 310)
@@ -477,11 +474,9 @@ function App() {
     ctx.fillText(result.salary_analysis.status.split(' ')[0], 420, 335)
     ctx.fillText(result.recruiter_verification.domain_type || 'Unknown', 610, 335)
 
-    // Divider
     ctx.strokeStyle = 'rgba(2,195,154,0.2)'
     ctx.beginPath(); ctx.moveTo(40, 360); ctx.lineTo(760, 360); ctx.stroke()
 
-    // Top scam indicators
     ctx.font = 'bold 13px sans-serif'
     ctx.fillStyle = '#02c39a'
     ctx.fillText('🚩 Key Red Flags:', 40, 385)
@@ -497,20 +492,17 @@ function App() {
       })
     }
 
-    // Footer
     ctx.fillStyle = 'rgba(2,195,154,0.15)'
     ctx.fillRect(0, 470, 800, 50)
     ctx.font = '12px sans-serif'
     ctx.fillStyle = '#8fa6a3'
     ctx.fillText('Generated by CareerTrust AI • careertrust.ai • Verify independently before applying or paying money.', 40, 500)
 
-    // Download
     const link = document.createElement('a')
     link.download = `CareerTrust-Report-${companyName || 'Report'}.png`
     link.href = canvas.toDataURL('image/png')
     link.click()
 
-    // Also open WhatsApp with text
     setTimeout(() => {
       window.open(`https://wa.me/?text=${encodeURIComponent(shareText() + '\n\n📊 Download the full image report and analyze your own offers at CareerTrust AI!')}`, '_blank')
     }, 500)
@@ -542,7 +534,7 @@ function App() {
     let replyText = null
     try {
       const history = newMessages.map((m) => ({ role: m.sender === 'user' ? 'user' : 'assistant', content: m.text }))
-      const res = await fetch('http://127.0.0.1:8000/chat', {
+      const res = await fetch(API + '/chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ message: text, history }),
@@ -579,6 +571,8 @@ function App() {
         <button onClick={() => isLoggedIn ? setPage('history') : setPage('login')} className="sidebar-nav-btn" style={navBtn(page === 'history')}>{L.history}</button>
         <button onClick={() => setPage('about')} className="sidebar-nav-btn" style={navBtn(page === 'about')}>{L.about}</button>
         <button onClick={() => { setPage('news'); fetchScamNews() }} className="sidebar-nav-btn" style={navBtn(page === 'news')}>📰 Scam News</button>
+        <button onClick={() => setPage('tips')} className="sidebar-nav-btn" style={navBtn(page === 'tips')}>💡 Interview Tips</button>
+        <button onClick={() => setPage('career')} className="sidebar-nav-btn" style={navBtn(page === 'career')}>🚀 Career Guide</button>
         <button onClick={() => isLoggedIn ? setPage('profile') : setPage('login')} className="sidebar-nav-btn" style={navBtn(page === 'profile')}>{L.profile}</button>
         <div className="sidebar-spacer" />
         <div className="sidebar-bottom">
@@ -834,6 +828,133 @@ function App() {
           ))}
           <div style={{ marginTop: '20px', padding: '14px', background: darkMode ? '#0f2a25' : '#e9fdf3', borderRadius: '10px', fontSize: '12px', color: theme.muted }}>
             💡 <strong>Tip:</strong> Add a free GNews API key in backend .env as <code>GNEWS_API_KEY=your_key</code> to get live news. Get key at <a href="https://gnews.io" target="_blank" rel="noreferrer" style={{ color: '#02c39a' }}>gnews.io</a>
+          </div>
+        </div>
+      )}
+
+      {page === 'tips' && (
+        <div key="tips" className="page-fade" style={{ maxWidth: '750px', margin: '0 auto', padding: '40px 16px 60px' }}>
+          <h1 style={{ color: theme.text, fontSize: '26px', marginBottom: '6px' }}>💡 Interview Tips</h1>
+          <p style={{ color: theme.muted, marginBottom: '28px' }}>Role-based tips to help you ace your next interview.</p>
+
+          {[
+            { role: '💻 Software Engineer', color: '#028090', tips: [
+              'Practice DSA daily — LeetCode Easy/Medium is enough for most companies.',
+              'Know your resume projects deeply — expect "explain this project" questions.',
+              'System design basics: load balancing, databases, APIs — even for freshers.',
+              'Ask clarifying questions before coding — shows problem-solving approach.',
+              'Always test your code with edge cases out loud during the interview.',
+            ]},
+            { role: '📊 Data Analyst', color: '#7b1fa2', tips: [
+              'SQL is king — practice GROUP BY, JOINs, window functions, subqueries.',
+              'Know Excel formulas: VLOOKUP, PIVOT tables, conditional formatting.',
+              'Be ready to explain a data insight story: problem → analysis → recommendation.',
+              'Learn basic Python (pandas, matplotlib) — most roles expect it now.',
+              'Prepare 1-2 real data projects with results (% improvement, cost saved).',
+            ]},
+            { role: '🎨 UI/UX Designer', color: '#c62828', tips: [
+              'Always explain your design decisions — "why this color/layout" matters.',
+              'Show your design process: research → wireframe → prototype → test.',
+              'Know basic accessibility (contrast ratio, font size, tab order).',
+              'Be ready for a live design task — practice in Figma under time pressure.',
+              'Prepare case studies with before/after metrics (engagement %, task success).',
+            ]},
+            { role: '📣 Marketing / BDE', color: '#ef6c00', tips: [
+              'Know the company\'s target audience, competitors, and recent campaigns.',
+              'Prepare a "mock pitch" — sell the company\'s product to the interviewer.',
+              'Show numbers: CTR, conversion rate, ROI — employers want data-driven thinking.',
+              'LinkedIn, Google Ads basics are expected even for freshers in digital roles.',
+              'Have a portfolio of campaigns you ran — college fest, NGO, personal project.',
+            ]},
+          ].map((section, i) => (
+            <div key={i} className="ui-card" style={{ background: theme.cardBg, borderRadius: '14px', padding: '20px', marginBottom: '16px', boxShadow: '0 4px 14px rgba(0,0,0,0.07)', borderLeft: `4px solid ${section.color}` }}>
+              <h3 style={{ color: section.color, marginTop: 0, marginBottom: '14px' }}>{section.role}</h3>
+              {section.tips.map((tip, j) => (
+                <div key={j} style={{ display: 'flex', gap: '10px', marginBottom: '10px', alignItems: 'flex-start' }}>
+                  <span style={{ color: section.color, fontWeight: 'bold', flexShrink: 0 }}>✓</span>
+                  <span style={{ color: theme.text, fontSize: '14px', lineHeight: 1.5 }}>{tip}</span>
+                </div>
+              ))}
+            </div>
+          ))}
+
+          <div style={{ background: darkMode ? '#0f2a25' : '#e9fdf3', borderRadius: '12px', padding: '18px', marginTop: '10px' }}>
+            <h3 style={{ color: '#02c39a', marginTop: 0 }}>🎯 General Interview Golden Rules</h3>
+            {['Research the company deeply before the interview — check their latest news, products, culture.', 'STAR method for HR questions: Situation → Task → Action → Result.', 'Dress professionally even for virtual interviews — first impressions matter.', 'Prepare 3-5 questions to ask the interviewer — shows genuine interest.', 'Follow up with a thank-you email within 24 hours — most candidates skip this.'].map((tip, i) => (
+              <div key={i} style={{ display: 'flex', gap: '10px', marginBottom: '8px' }}>
+                <span style={{ color: '#02c39a', fontWeight: 'bold' }}>{i + 1}.</span>
+                <span style={{ color: theme.text, fontSize: '14px' }}>{tip}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {page === 'career' && (
+        <div key="career" className="page-fade" style={{ maxWidth: '750px', margin: '0 auto', padding: '40px 16px 60px' }}>
+          <h1 style={{ color: theme.text, fontSize: '26px', marginBottom: '6px' }}>🚀 Career Guide</h1>
+          <p style={{ color: theme.muted, marginBottom: '28px' }}>Skill roadmaps, salary insights, and career paths for students in India.</p>
+
+          <div className="ui-card" style={{ background: theme.cardBg, borderRadius: '14px', padding: '20px', marginBottom: '20px', boxShadow: '0 4px 14px rgba(0,0,0,0.07)' }}>
+            <h3 style={{ color: '#02c39a', marginTop: 0 }}>💰 Fresher Salary Range (India 2026)</h3>
+            <div style={{ overflowX: 'auto' }}>
+              <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px' }}>
+                <thead>
+                  <tr style={{ background: '#028090', color: '#fff' }}>
+                    {['Role', 'Entry (₹/month)', 'Mid (₹/month)', 'Top Companies'].map((h, i) => (
+                      <th key={i} style={{ padding: '10px 12px', textAlign: 'left' }}>{h}</th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {[
+                    ['Software Engineer', '₹25,000–50,000', '₹60,000–1,20,000', 'TCS, Infosys, Wipro, Zoho'],
+                    ['Data Analyst', '₹20,000–40,000', '₹50,000–90,000', 'Deloitte, EY, Amazon, Flipkart'],
+                    ['UI/UX Designer', '₹18,000–35,000', '₹45,000–80,000', 'Freshworks, Zoho, startups'],
+                    ['Digital Marketing', '₹15,000–30,000', '₹40,000–70,000', 'Agencies, D2C brands'],
+                    ['Business Dev (BDE)', '₹15,000–25,000 + incentive', '₹35,000–60,000', 'Startups, EdTech'],
+                    ['Cloud / DevOps', '₹30,000–55,000', '₹70,000–1,40,000', 'AWS, Azure partners, TCS'],
+                  ].map((row, i) => (
+                    <tr key={i} style={{ background: i % 2 === 0 ? (darkMode ? '#0f2a25' : '#f0fdf9') : theme.cardBg }}>
+                      {row.map((cell, j) => (
+                        <td key={j} style={{ padding: '10px 12px', color: theme.text, borderBottom: `1px solid ${theme.border}` }}>{cell}</td>
+                      ))}
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+            <p style={{ fontSize: '11px', color: theme.muted, marginTop: '10px', marginBottom: 0 }}>⚠️ Ranges vary by city, company size, and skills. Metro cities (Bangalore, Mumbai, Hyderabad) typically pay 20–40% higher.</p>
+          </div>
+
+          <h2 style={{ color: theme.text, marginBottom: '16px' }}>🗺️ Skill Roadmaps</h2>
+          {[
+            { path: '💻 Full Stack Developer', color: '#028090', steps: ['HTML + CSS + JavaScript basics (2 months)', 'React or Vue for frontend (1 month)', 'Node.js + Express or Django/FastAPI backend (1 month)', 'SQL + MongoDB databases (3 weeks)', 'Git, GitHub, deployment (Vercel/Render) (1 week)', 'Build 2-3 full projects → apply!'] },
+            { path: '📊 Data Science / ML', color: '#7b1fa2', steps: ['Python basics + pandas + numpy (6 weeks)', 'Data visualization: matplotlib, seaborn (2 weeks)', 'SQL for data analysis (3 weeks)', 'Machine Learning: scikit-learn (2 months)', 'Deep Learning: TensorFlow or PyTorch (2 months)', 'Kaggle competitions + portfolio → apply!'] },
+            { path: '☁️ Cloud & DevOps', color: '#1565c0', steps: ['Linux basics + command line (3 weeks)', 'Git + GitHub + CI/CD concepts (2 weeks)', 'Docker containers (3 weeks)', 'AWS or Azure fundamentals (1 month)', 'Kubernetes basics (3 weeks)', 'Get AWS/Azure free tier certification → apply!'] },
+          ].map((roadmap, i) => (
+            <div key={i} className="ui-card" style={{ background: theme.cardBg, borderRadius: '14px', padding: '20px', marginBottom: '16px', boxShadow: '0 4px 14px rgba(0,0,0,0.07)' }}>
+              <h3 style={{ color: roadmap.color, marginTop: 0, marginBottom: '16px' }}>{roadmap.path}</h3>
+              <div style={{ position: 'relative', paddingLeft: '24px' }}>
+                <div style={{ position: 'absolute', left: '8px', top: 0, bottom: 0, width: '2px', background: `${roadmap.color}40` }} />
+                {roadmap.steps.map((step, j) => (
+                  <div key={j} style={{ display: 'flex', gap: '12px', marginBottom: '12px', alignItems: 'flex-start', position: 'relative' }}>
+                    <div style={{ width: '18px', height: '18px', borderRadius: '50%', background: roadmap.color, color: '#fff', fontSize: '10px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 'bold', flexShrink: 0, position: 'absolute', left: '-20px' }}>{j + 1}</div>
+                    <span style={{ color: theme.text, fontSize: '13.5px', lineHeight: 1.5 }}>{step}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          ))}
+
+          <div style={{ background: darkMode ? '#2a1414' : '#fff3f3', border: '1px solid #c62828', borderRadius: '12px', padding: '18px', marginTop: '8px' }}>
+            <h3 style={{ color: '#c62828', marginTop: 0 }}>🚩 Career Red Flags to Avoid</h3>
+            {['Companies that promise "₹50,000/month work from home" with no interview process.', 'Internships that ask for money upfront — legit companies NEVER charge you.', 'Offer letters sent via WhatsApp from personal numbers (gmail/yahoo HR emails).', 'Roles with vague job descriptions like "data entry" or "online work" with high pay.', 'Any company asking for Aadhaar, PAN, or bank details before joining.'].map((flag, i) => (
+              <div key={i} style={{ display: 'flex', gap: '10px', marginBottom: '8px' }}>
+                <span style={{ color: '#c62828', fontWeight: 'bold', flexShrink: 0 }}>✗</span>
+                <span style={{ color: theme.text, fontSize: '14px' }}>{flag}</span>
+              </div>
+            ))}
           </div>
         </div>
       )}

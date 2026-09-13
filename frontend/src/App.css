@@ -71,13 +71,13 @@ input:focus, textarea:focus {
   100% { background-position: -200% 0; }
 }
 .page-fade {
-  animation: fadeIn 0.4s ease;
+  animation: fadeSlideIn 0.35s cubic-bezier(0.25, 0.46, 0.45, 0.94) both;
   position: relative;
 }
 
-@keyframes fadeIn {
-  from { opacity: 0; transform: translateY(8px); }
-  to { opacity: 1; transform: translateY(0); }
+@keyframes fadeSlideIn {
+  from { opacity: 0; transform: translateY(14px) scale(0.99); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
 }
 
 .confetti-piece {
@@ -128,13 +128,11 @@ input:focus, textarea:focus {
   100% { box-shadow: 0 0 0 0 rgba(198,40,40,0); }
 }
 
-/* Responsive typography — scales smoothly on mobile without touching JSX */
 h1 { font-size: clamp(24px, 6vw, 38px) !important; letter-spacing: -0.5px; line-height: 1.25 !important; }
 h2 { font-size: clamp(18px, 4vw, 24px) !important; letter-spacing: -0.3px; }
 h3 { font-size: clamp(15px, 3vw, 17px) !important; }
 p { line-height: 1.6; }
 
-/* Card and button micro-interactions */
 button {
   transition: transform 0.15s ease, box-shadow 0.15s ease, opacity 0.15s ease !important;
 }
@@ -149,14 +147,12 @@ input:focus, textarea:focus {
   box-shadow: 0 0 0 3px rgba(2, 195, 154, 0.15);
 }
 
-/* Mobile tightening */
 @media (max-width: 480px) {
   body { -webkit-text-size-adjust: 100%; }
   table { font-size: 11px !important; }
   th, td { padding: 6px !important; }
 }
 
-/* Smoother rendering overall */
 * {
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
@@ -166,7 +162,6 @@ input:focus, textarea:focus {
 ::-webkit-scrollbar-thumb { background: #02c39a; border-radius: 4px; }
 ::-webkit-scrollbar-track { background: transparent; }
 
-/* ===================== SPLASH SCREEN ===================== */
 .splash-screen {
   position: fixed;
   inset: 0;
@@ -269,7 +264,6 @@ input:focus, textarea:focus {
   to { width: 100%; }
 }
 
-/* ===================== BUILD-IN ICON (used in sidebar / on page change) ===================== */
 .build-icon-wrap {
   position: relative;
   display: inline-flex;
@@ -303,7 +297,6 @@ input:focus, textarea:focus {
   100% { opacity: 0; transform: translate(0, 0) scale(0.2); }
 }
 
-/* ===================== LEFT SIDEBAR LAYOUT ===================== */
 .sidebar {
   position: fixed;
   top: 0;
@@ -371,7 +364,6 @@ input:focus, textarea:focus {
   .main-with-sidebar { margin-left: 0; padding-bottom: 74px; }
 }
 
-/* ===================== POLISHED UI: CARDS, HERO, BUTTONS ===================== */
 .ui-card {
   backdrop-filter: blur(6px);
   border: 1px solid rgba(2, 195, 154, 0.12);
@@ -407,7 +399,6 @@ input:focus, textarea:focus {
   transform: translateX(3px);
 }
 
-/* Animated background blobs behind hero */
 .hero-blobs {
   position: absolute;
   top: 0; left: 0; right: 0;

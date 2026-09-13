@@ -1,0 +1,14 @@
+{
+  "name": "CareerTrust AI",
+  "short_name": "CareerTrust",
+  "description": "Smart Career Safety — Detect scam job offers instantly",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#071a1f",
+  "theme_color": "#02c39a",
+  "orientation": "portrait-primary",
+  "icons": [
+    { "src": "/icon-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "/icon-512.png", "sizes": "512x512", "type": "image/png" }
+  ]
+}
