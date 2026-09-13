@@ -173,10 +173,42 @@ function App() {
   const [memberSince, setMemberSince] = useState('')
   const [defaultSkills, setDefaultSkills] = useState('')
 
+  // OTP flow
+  const [otpSent, setOtpSent] = useState(false)
+  const [otpValue, setOtpValue] = useState('')
+  const [otpDevCode, setOtpDevCode] = useState('')
+
+  // Scam news
+  const [scamNews, setScamNews] = useState([])
+  const [newsLoading, setNewsLoading] = useState(false)
+
   const [loginLoading, setLoginLoading] = useState(false)
+  const [ocrLoading, setOcrLoading] = useState(false)
   const [ocrProgress, setOcrProgress] = useState(0)
+  const [resumeLoading, setResumeLoading] = useState(false)
+  const [resumeSkills, setResumeSkills] = useState([])
+  const [resumeName, setResumeName] = useState('')
   const [listening, setListening] = useState(false)
   const recognitionRef = useRef(null)
+
+  const handleResumeUpload = async (e) => {
+    const file = e.target.files[0]
+    if (!file) return
+    if (!file.name.endsWith('.pdf')) { alert('Please upload a PDF file.'); return }
+    setResumeLoading(true)
+    setResumeName(file.name)
+    setResumeSkills([])
+    try {
+      const formData = new FormData()
+      formData.append('file', file)
+      const res = await fetch('http://127.0.0.1:8000/parse-resume', { method: 'POST', body: formData })
+      const data = await res.json()
+      if (data.error) { alert(data.error); setResumeLoading(false); return }
+      setResumeSkills(data.skills || [])
+      if (data.skills_string) setSkills(data.skills_string)
+    } catch (err) { alert('Could not connect to backend. Is it running?') }
+    setResumeLoading(false)
+  }
 
   const [darkMode, setDarkMode] = useState(false)
   const [openFaq, setOpenFaq] = useState(null)
@@ -232,32 +264,50 @@ function App() {
     if (!loginData.name || !loginData.email) { setLoginStatus('Please enter your name and email.'); return }
     if (!isValidEmail(loginData.email)) { setLoginStatus('Please enter a valid email address.'); return }
 
-    setLoginLoading(true)
-    setLoginStatus('Verifying email...')
-    try {
-      const res = await fetch('http://127.0.0.1:8000/verify-email', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email: loginData.email })
-      })
-      const data = await res.json()
-      if (!data.valid) {
-        setLoginStatus(data.reason || 'Please enter a valid email address.')
-        setLoginLoading(false)
-        return
+    if (!otpSent) {
+      // Step 1: Send OTP
+      setLoginLoading(true)
+      setLoginStatus('Sending OTP to your email...')
+      try {
+        const res = await fetch('http://127.0.0.1:8000/send-otp', {
+          method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email: loginData.email, name: loginData.name })
+        })
+        const data = await res.json()
+        if (data.dev_otp) {
+          setOtpDevCode(data.dev_otp)
+          setLoginStatus(`⚠️ SMTP not set up. Dev OTP: ${data.dev_otp}`)
+        } else {
+          setLoginStatus('✅ OTP sent! Check your email inbox.')
+        }
+        setOtpSent(true)
+      } catch (err) {
+        setLoginStatus('⚠️ Backend not reachable. Continuing without OTP.')
+        setIsLoggedIn(true)
+        const since = localStorage.getItem('ct_member_since') || new Date().toLocaleDateString()
+        localStorage.setItem('ct_member_since', since)
+        setMemberSince(since)
+        if (defaultSkills) setSkills(defaultSkills)
+        setPage('form')
       }
-    } catch (error) {
-      setLoginStatus('⚠️ Could not reach server — continuing with basic validation only.')
+      setLoginLoading(false)
+      return
     }
 
+    // Step 2: Verify OTP
+    if (!otpValue) { setLoginStatus('Please enter the OTP sent to your email.'); return }
+    setLoginLoading(true)
+    setLoginStatus('Verifying OTP...')
     try {
-      await fetch('http://127.0.0.1:8000/signup', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(loginData)
+      const res = await fetch('http://127.0.0.1:8000/verify-otp', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: loginData.email, otp: otpValue })
       })
-    } catch (error) {}
+      const data = await res.json()
+      if (!data.valid) { setLoginStatus(data.reason || 'Invalid OTP.'); setLoginLoading(false); return }
+    } catch (err) { setLoginStatus('⚠️ Could not verify OTP.'); setLoginLoading(false); return }
 
+    try { await fetch('http://127.0.0.1:8000/signup', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(loginData) }) } catch (e) {}
     setLoginStatus('')
     setLoginLoading(false)
     setIsLoggedIn(true)
@@ -266,6 +316,16 @@ function App() {
     setMemberSince(since)
     if (defaultSkills) setSkills(defaultSkills)
     setPage('form')
+  }
+
+  const fetchScamNews = async () => {
+    setNewsLoading(true)
+    try {
+      const res = await fetch('http://127.0.0.1:8000/scam-news')
+      const data = await res.json()
+      setScamNews(data.articles || [])
+    } catch (e) { setScamNews([]) }
+    setNewsLoading(false)
   }
 
   const handleLogout = () => {
@@ -390,6 +450,7 @@ function App() {
         <button onClick={() => result && setPage('result')} disabled={!result} className="sidebar-nav-btn" style={{ ...navBtn(page === 'result'), opacity: result ? 1 : 0.5 }}>{L.result}</button>
         <button onClick={() => isLoggedIn ? setPage('history') : setPage('login')} className="sidebar-nav-btn" style={navBtn(page === 'history')}>{L.history}</button>
         <button onClick={() => setPage('about')} className="sidebar-nav-btn" style={navBtn(page === 'about')}>{L.about}</button>
+        <button onClick={() => { setPage('news'); fetchScamNews() }} className="sidebar-nav-btn" style={navBtn(page === 'news')}>📰 Scam News</button>
         <button onClick={() => isLoggedIn ? setPage('profile') : setPage('login')} className="sidebar-nav-btn" style={navBtn(page === 'profile')}>{L.profile}</button>
         <div className="sidebar-spacer" />
         <div className="sidebar-bottom">
@@ -423,9 +484,18 @@ function App() {
             <input type="text" placeholder={L.namePh} value={loginData.name} onChange={(e) => setLoginData({ ...loginData, name: e.target.value })} style={{ width: '100%', padding: '10px', marginBottom: '10px', borderRadius: '8px', border: '1px solid #ccc' }} />
             <input type="email" placeholder={L.emailPh} value={loginData.email} onChange={(e) => setLoginData({ ...loginData, email: e.target.value })} style={{ width: '100%', padding: '10px', marginBottom: '10px', borderRadius: '8px', border: '1px solid #ccc' }} />
             <input type="text" placeholder={L.phonePh} value={loginData.phone} onChange={(e) => setLoginData({ ...loginData, phone: e.target.value })} style={{ width: '100%', padding: '10px', marginBottom: '14px', borderRadius: '8px', border: '1px solid #ccc' }} />
+            {otpSent && (
+              <div style={{ marginBottom: '14px' }}>
+                <div style={{ fontSize: '12px', color: '#028090', marginBottom: '6px', fontWeight: 'bold' }}>📧 Enter the 6-digit OTP sent to your email:</div>
+                <input type="text" maxLength={6} placeholder="Enter OTP" value={otpValue} onChange={(e) => setOtpValue(e.target.value)} style={{ width: '100%', padding: '12px', borderRadius: '8px', border: '2px solid #02c39a', fontSize: '20px', letterSpacing: '8px', textAlign: 'center', fontWeight: 'bold' }} />
+                <div style={{ fontSize: '11px', color: theme.muted, marginTop: '4px', textAlign: 'center' }}>
+                  Didn't get it? <span onClick={() => { setOtpSent(false); setOtpValue('') }} style={{ color: '#02c39a', cursor: 'pointer', fontWeight: 'bold' }}>Resend OTP</span>
+                </div>
+              </div>
+            )}
             <button onClick={handleLogin} disabled={loginLoading} className="ui-btn-primary" style={{ width: '100%', background: 'linear-gradient(90deg, #028090, #02c39a)', color: '#fff', border: 'none', padding: '13px', borderRadius: '8px', fontWeight: 'bold', cursor: loginLoading ? 'not-allowed' : 'pointer', opacity: loginLoading ? 0.7 : 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}>
               {loginLoading && <span className="spinner" />}
-              {loginLoading ? 'Verifying...' : L.loginBtn}
+              {loginLoading ? 'Please wait...' : otpSent ? '✅ Verify OTP & Login' : '📧 Send OTP & Continue'}
             </button>
             {loginStatus && <p style={{ marginTop: '10px', color: '#c62828', fontSize: '13px', textAlign: 'center' }}>{loginStatus}</p>}
           </div>
@@ -475,7 +545,22 @@ function App() {
               <textarea rows="6" style={{ width: '100%', padding: '10px', borderRadius: '10px', border: '1px solid #b6e8d5', background: theme.cardBg, color: theme.text, fontFamily: 'sans-serif' }} value={jobText} onChange={(e) => setJobText(e.target.value)} placeholder="Paste the job or internship message here..." />
             </div>
             <label style={{ fontWeight: 'bold', color: theme.text }}>{L.skillsLabel}</label>
-            <input type="text" style={{ width: '100%', marginBottom: '20px', padding: '10px', borderRadius: '8px', border: '1px solid #ccc', marginTop: '6px' }} value={skills} onChange={(e) => setSkills(e.target.value)} placeholder="e.g. React, Python, SQL" />
+            <div style={{ background: darkMode ? '#0f2a25' : '#e9fdf3', borderRadius: '10px', padding: '12px', marginTop: '6px', marginBottom: '14px', border: '1px solid #b6e8d5' }}>
+              <div style={{ fontSize: '12px', color: '#028090', marginBottom: '8px', fontWeight: 'bold' }}>📄 Upload Resume (PDF) — auto-detect skills</div>
+              <input type="file" accept=".pdf" onChange={handleResumeUpload} style={{ fontSize: '13px' }} />
+              {resumeLoading && <div style={{ marginTop: '8px', fontSize: '13px', color: '#02c39a' }}>⏳ Reading resume...</div>}
+              {resumeSkills.length > 0 && (
+                <div style={{ marginTop: '10px' }}>
+                  <div style={{ fontSize: '12px', color: '#028090', marginBottom: '6px' }}>✅ {resumeSkills.length} skills detected from <strong>{resumeName}</strong>:</div>
+                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
+                    {resumeSkills.map((s, i) => (
+                      <span key={i} style={{ background: '#02c39a', color: '#fff', padding: '3px 10px', borderRadius: '20px', fontSize: '11px', fontWeight: 'bold' }}>{s}</span>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+            <input type="text" style={{ width: '100%', marginBottom: '20px', padding: '10px', borderRadius: '8px', border: '1px solid #ccc', marginTop: '0' }} value={skills} onChange={(e) => setSkills(e.target.value)} placeholder="e.g. React, Python, SQL (auto-filled from resume, or type manually)" />
             <div style={{ display: 'flex', gap: '10px' }}>
               <button onClick={() => setPage('login')} style={{ flex: '0 0 auto', background: 'transparent', color: theme.text, border: `1px solid ${theme.border}`, padding: '14px 18px', borderRadius: '10px', fontWeight: 'bold', cursor: 'pointer' }}>{L.back}</button>
               <button onClick={handleAnalyze} disabled={loading || !jobText} className="ui-btn-primary" style={{ flex: 1, background: 'linear-gradient(90deg, #028090, #02c39a)', color: '#fff', border: 'none', padding: '14px', borderRadius: '10px', fontWeight: 'bold', fontSize: '15px', cursor: 'pointer', opacity: loading || !jobText ? 0.6 : 1, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
@@ -528,6 +613,15 @@ function App() {
               {result.scam_indicators.map((w) => (<div key={w.id} style={{ ...cardStyle, borderLeft: '4px solid #c62828' }}><strong style={{ color: theme.text }}>{w.title}</strong> <span style={{ color: theme.muted }}>(+{w.points} points)</span><p style={{ margin: '6px 0', color: theme.text }}>{w.reason}</p><p style={{ margin: 0, fontStyle: 'italic', color: theme.muted }}>Evidence: {w.evidence}</p></div>))}
               {result.sensitive_data_check && result.sensitive_data_check.sensitive_data_requested && (<div style={{ ...cardStyle, borderLeft: '4px solid #c62828', background: darkMode ? '#2a1414' : '#fff3f3' }}><strong style={{ color: theme.text }}>🔒 Sensitive Information Requested: {result.sensitive_data_check.types_detected.join(', ')}</strong><p style={{ margin: '6px 0 0 0', color: theme.text }}>{result.sensitive_data_check.warning}</p></div>)}
               <h3 style={{ marginTop: '20px', color: theme.text }}>🏢 Company Verification</h3>
+              {result.company_db_check && (
+                <div style={{ background: result.company_db_check.color + '18', border: `2px solid ${result.company_db_check.color}`, borderRadius: '10px', padding: '14px', marginBottom: '10px', display: 'flex', alignItems: 'center', gap: '12px' }}>
+                  <span style={{ fontSize: '22px' }}>{result.company_db_check.badge.split(' ')[0]}</span>
+                  <div>
+                    <div style={{ fontWeight: 'bold', color: result.company_db_check.color, fontSize: '14px' }}>{result.company_db_check.badge}</div>
+                    <div style={{ fontSize: '13px', color: theme.text, marginTop: '2px' }}>{result.company_db_check.message}</div>
+                  </div>
+                </div>
+              )}
               <div style={cardStyle}><p style={{ margin: '4px 0', color: theme.text }}><strong>Status:</strong> {result.company_verification.status}</p><p style={{ margin: '4px 0', color: theme.muted }}>{result.company_verification.note}</p></div>
               <h3 style={{ marginTop: '20px', color: theme.text }}>👤 Recruiter Verification</h3>
               <div style={cardStyle}><p style={{ margin: '4px 0', color: theme.text }}><strong>Email Found:</strong> {result.recruiter_verification.email_found || 'None'}</p><p style={{ margin: '4px 0', color: theme.text }}><strong>Domain Type:</strong> {result.recruiter_verification.domain_type}</p><p style={{ margin: '4px 0', color: theme.muted }}>{result.recruiter_verification.note}</p></div>
@@ -582,6 +676,36 @@ function App() {
           <div style={{ background: theme.cardBg, borderRadius: '14px', padding: '24px', boxShadow: '0 4px 14px rgba(0,0,0,0.06)' }}>
             <h3 style={{ marginTop: 0, color: theme.text }}>Built By</h3>
             <p style={{ color: theme.muted, fontSize: '14px', margin: 0 }}>Akash S — an independent project focused on student career safety.</p>
+          </div>
+        </div>
+      )}
+
+      {page === 'news' && (
+        <div key="news" className="page-fade" style={{ maxWidth: '700px', margin: '0 auto', padding: '40px 16px 60px' }}>
+          <h1 style={{ color: theme.text, fontSize: '26px', marginBottom: '6px' }}>📰 Latest Job Scam Alerts</h1>
+          <p style={{ color: theme.muted, marginBottom: '24px' }}>Recent job scam news from India — stay informed, stay safe.</p>
+          {newsLoading && <div style={{ textAlign: 'center', color: '#02c39a', padding: '40px' }}>⏳ Loading news...</div>}
+          {!newsLoading && scamNews.length === 0 && (
+            <div style={{ textAlign: 'center', color: theme.muted, padding: '40px' }}>
+              <div style={{ fontSize: '40px', marginBottom: '12px' }}>📭</div>
+              <div>Could not load news. Backend may not be running.</div>
+              <button onClick={fetchScamNews} style={{ marginTop: '16px', background: '#02c39a', color: '#fff', border: 'none', padding: '10px 20px', borderRadius: '8px', cursor: 'pointer' }}>Try Again</button>
+            </div>
+          )}
+          {scamNews.map((article, i) => (
+            <a key={i} href={article.url} target="_blank" rel="noopener noreferrer" style={{ textDecoration: 'none' }}>
+              <div className="ui-card" style={{ background: theme.cardBg, borderRadius: '12px', padding: '16px', marginBottom: '12px', boxShadow: '0 4px 12px rgba(0,0,0,0.06)', display: 'flex', gap: '14px', alignItems: 'flex-start' }}>
+                <div style={{ fontSize: '28px', flexShrink: 0 }}>🚨</div>
+                <div>
+                  <div style={{ fontWeight: 'bold', color: theme.text, fontSize: '14px', marginBottom: '6px' }}>{article.title}</div>
+                  <div style={{ fontSize: '11px', color: theme.muted }}>{article.source} • {article.date}</div>
+                </div>
+                <div style={{ marginLeft: 'auto', flexShrink: 0, color: '#02c39a', fontSize: '18px' }}>→</div>
+              </div>
+            </a>
+          ))}
+          <div style={{ marginTop: '20px', padding: '14px', background: darkMode ? '#0f2a25' : '#e9fdf3', borderRadius: '10px', fontSize: '12px', color: theme.muted }}>
+            💡 <strong>Tip:</strong> Add a free GNews API key in backend .env as <code>GNEWS_API_KEY=your_key</code> to get live news. Get key at <a href="https://gnews.io" target="_blank" rel="noreferrer" style={{ color: '#02c39a' }}>gnews.io</a>
           </div>
         </div>
       )}

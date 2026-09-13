@@ -96,7 +96,6 @@ def analyze_skill_match(job_text: str, student_skills: str):
     matched = [s for s in student_skill_list if s in text_lower]
     missing_candidates = []
 
-    # common tech skill keywords to check if job mentions them but student doesn't have them
     common_skills = ["python", "java", "javascript", "react", "node", "sql", "html", "css",
                       "fastapi", "django", "flask", "git", "aws", "machine learning", "excel",
                       "communication", "figma", "c++", "typescript"]
@@ -151,3 +150,41 @@ SAFE_APPLY_CHECKLIST = [
     "Read the offer letter carefully before signing.",
     "Report suspicious opportunities to your placement cell or trusted platform.",
 ]
+
+KNOWN_SKILLS = [
+   
+    "python", "java", "javascript", "typescript", "c++", "c#", "c", "go", "rust", "kotlin",
+    "swift", "php", "ruby", "scala", "r", "matlab", "perl", "dart", "bash", "shell",
+    
+    "react", "angular", "vue", "html", "css", "sass", "bootstrap", "tailwind", "nextjs",
+    "gatsby", "webpack", "jquery", "redux",
+   
+    "nodejs", "node.js", "express", "django", "flask", "fastapi", "spring", "laravel",
+    "rails", "asp.net", "graphql", "rest api", "restful",
+   
+    "sql", "mysql", "postgresql", "mongodb", "redis", "sqlite", "oracle", "cassandra",
+    "dynamodb", "firebase", "supabase",
+   
+    "aws", "azure", "gcp", "docker", "kubernetes", "jenkins", "git", "github", "gitlab",
+    "ci/cd", "terraform", "linux", "nginx",
+   
+    "machine learning", "deep learning", "tensorflow", "pytorch", "keras", "scikit-learn",
+    "pandas", "numpy", "matplotlib", "seaborn", "nlp", "computer vision", "opencv",
+    "data analysis", "data science", "power bi", "tableau", "excel",
+   
+    "android", "ios", "flutter", "react native", "xamarin",
+ 
+    "figma", "photoshop", "illustrator", "ui/ux", "agile", "scrum", "jira", "confluence",
+    "selenium", "junit", "testing", "cybersecurity", "networking", "blockchain",
+]
+
+def extract_skills_from_text(text: str) -> list[str]:
+    """Extract known skills from any text (resume or job description)."""
+    text_lower = text.lower()
+    found = []
+    for skill in KNOWN_SKILLS:
+    
+        pattern = r'\b' + re.escape(skill) + r'\b'
+        if re.search(pattern, text_lower):
+            found.append(skill)
+    return found
