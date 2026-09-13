@@ -291,6 +291,7 @@ function App() {
       setLoginLoading(false)
       return
     }
+
     if (!otpValue) { setLoginStatus('Please enter the OTP sent to your email.'); return }
     setLoginLoading(true)
     setLoginStatus('Verifying OTP...')
@@ -584,7 +585,7 @@ function App() {
 
       <div className="main-with-sidebar">
       {page === 'login' && (
-        <div key="login" className="page-fade">
+        <div key="login" className="page-fade" style={{ position: 'relative', overflow: 'hidden' }}>
           <div className="no-print hero-blobs">
             <div className="hero-blob b1" /><div className="hero-blob b2" /><div className="hero-blob b3" />
           </div>

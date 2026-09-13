@@ -2,11 +2,14 @@
 
 * {
   box-sizing: border-box;
+  margin: 0;
+  padding: 0;
 }
 
 body {
-  margin: 0;
   font-family: 'Poppins', sans-serif;
+  overflow-x: hidden;
+  width: 100%;
 }
 
 #root {
@@ -158,7 +161,15 @@ input:focus, textarea:focus {
   -moz-osx-font-smoothing: grayscale;
 }
 
-::-webkit-scrollbar { width: 8px; height: 8px; }
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  overflow-x: hidden;
+}
 ::-webkit-scrollbar-thumb { background: #02c39a; border-radius: 4px; }
 ::-webkit-scrollbar-track { background: transparent; }
 
@@ -344,6 +355,7 @@ input:focus, textarea:focus {
 .main-with-sidebar {
   margin-left: 210px;
   min-height: 100vh;
+  width: calc(100% - 210px);
 }
 @media (max-width: 780px) {
   .sidebar {
@@ -402,7 +414,7 @@ input:focus, textarea:focus {
 .hero-blobs {
   position: absolute;
   top: 0; left: 0; right: 0;
-  height: 480px;
+  height: 520px;
   overflow: hidden;
   z-index: 0;
   pointer-events: none;
