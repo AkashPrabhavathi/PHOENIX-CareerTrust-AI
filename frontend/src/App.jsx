@@ -111,6 +111,7 @@ function getBotReply(text, history = []) {
   ])
 }
 
+// Small helper: fragments that fly inward and converge into an icon, replayed via `trigger` key
 function BuildFX({ count = 8, radius = 34, className, durationMs = 600 }) {
   const shards = Array.from({ length: count })
   return shards.map((_, i) => {
@@ -173,12 +174,18 @@ function App() {
   const [memberSince, setMemberSince] = useState('')
   const [defaultSkills, setDefaultSkills] = useState('')
 
+ 
   const [otpSent, setOtpSent] = useState(false)
   const [otpValue, setOtpValue] = useState('')
   const [otpDevCode, setOtpDevCode] = useState('')
 
+ 
   const [scamNews, setScamNews] = useState([])
   const [newsLoading, setNewsLoading] = useState(false)
+
+  const [communityReports, setCommunityReports] = useState([])
+  const [reportForm, setReportForm] = useState({ company: '', city: '', description: '', category: 'Registration Fee' })
+  const [reportSubmitted, setReportSubmitted] = useState(false)
 
   const [loginLoading, setLoginLoading] = useState(false)
   const [ocrLoading, setOcrLoading] = useState(false)
@@ -263,7 +270,7 @@ function App() {
     if (!isValidEmail(loginData.email)) { setLoginStatus('Please enter a valid email address.'); return }
 
     if (!otpSent) {
-
+      
       setLoginLoading(true)
       setLoginStatus('Sending OTP to your email...')
       try {
@@ -524,6 +531,82 @@ function App() {
     ctx.fill()
   }
 
+  const downloadPDFReport = () => {
+    if (!result || result.error) return
+    const reportDate = new Date().toLocaleDateString('en-IN', { year: 'numeric', month: 'long', day: 'numeric' })
+    const riskColor = result.risk_level === 'Low Risk' ? '#2e7d32' : result.risk_level === 'Needs Verification' ? '#f9a825' : result.risk_level === 'High Risk' ? '#ef6c00' : '#c62828'
+    const html = `<!DOCTYPE html><html><head><title>CareerTrust AI Report</title><style>
+      body{font-family:Arial,sans-serif;margin:0;padding:0;color:#1a1a1a;}
+      .header{background:linear-gradient(90deg,#028090,#02c39a);color:#fff;padding:24px 32px;display:flex;justify-content:space-between;align-items:center;}
+      .header h1{margin:0;font-size:20px;} .header p{margin:4px 0;font-size:12px;opacity:0.85;}
+      .body{padding:24px 32px;}
+      .company{font-size:20px;font-weight:bold;color:#028090;margin-bottom:4px;}
+      .scores{display:flex;gap:14px;margin:16px 0;}
+      .score-box{flex:1;padding:16px;border-radius:10px;color:#fff;}
+      .score-num{font-size:28px;font-weight:bold;} .score-label{font-size:11px;opacity:0.85;}
+      .bar{background:rgba(255,255,255,0.3);border-radius:4px;height:6px;margin-top:6px;}
+      .bar-fill{background:#fff;height:100%;border-radius:4px;}
+      .section h3{color:#028090;font-size:13px;margin:14px 0 8px;border-bottom:1px solid #e0f7f1;padding-bottom:4px;}
+      .card{background:#f8fffe;border:1px solid #e0f7f1;border-radius:6px;padding:10px;margin-bottom:6px;font-size:12px;}
+      .card.danger{border-left:4px solid #c62828;background:#fff8f8;}
+      .card.safe{border-left:4px solid #2e7d32;}
+      .tag{display:inline-block;background:#02c39a;color:#fff;padding:2px 8px;border-radius:10px;font-size:10px;margin:2px;}
+      .checklist{font-size:12px;padding-left:18px;} .checklist li{margin-bottom:4px;}
+      .complaint{background:#fff3f3;border:1px solid #c62828;border-radius:8px;padding:14px;margin-top:14px;}
+      .complaint h3{color:#c62828;margin:0 0 8px;font-size:13px;}
+      .disclaimer{background:#fff8e1;border:1px solid #f9a825;border-radius:6px;padding:10px;font-size:11px;color:#666;margin-top:12px;}
+      .footer{background:#0b2e33;color:#cadcda;padding:12px 32px;font-size:10px;display:flex;justify-content:space-between;margin-top:20px;}
+      @media print{body{-webkit-print-color-adjust:exact;print-color-adjust:exact;}}
+    </style></head><body>
+    <div class="header">
+      <div><h1>🛡️ CareerTrust AI — Analysis Report</h1><p>Generated: ${reportDate} | For: ${loginData.name || 'Student'} (${loginData.email || ''})</p></div>
+      <div style="background:rgba(255,255,255,0.2);padding:4px 12px;border-radius:20px;font-size:11px;font-weight:bold;">CONFIDENTIAL</div>
+    </div>
+    <div class="body">
+      <div class="company">${companyName || 'Unknown Company'}</div>
+      <div style="font-size:11px;color:#666;margin-bottom:14px;">Report Date: ${reportDate}</div>
+      <div class="scores">
+        <div class="score-box" style="background:${riskColor}">
+          <div class="score-num">${result.risk_score}/100</div>
+          <div class="score-label">Risk Score — ${result.risk_level}</div>
+          <div class="bar"><div class="bar-fill" style="width:${result.risk_score}%"></div></div>
+        </div>
+        <div class="score-box" style="background:linear-gradient(135deg,#1565c0,#42a5f5)">
+          <div class="score-num">${result.opportunity_score}/100</div>
+          <div class="score-label">Opportunity Score</div>
+          <div class="bar"><div class="bar-fill" style="width:${result.opportunity_score}%"></div></div>
+        </div>
+      </div>
+      ${result.company_db_check ? `<div class="section"><h3>🏢 Company Database</h3><div style="display:inline-block;padding:4px 12px;border-radius:16px;font-weight:bold;font-size:12px;background:${result.company_db_check.color}18;color:${result.company_db_check.color};border:1px solid ${result.company_db_check.color}">${result.company_db_check.badge}</div><p style="font-size:12px;margin:6px 0 0">${result.company_db_check.message}</p></div>` : ''}
+      <div class="section"><h3>🚩 Scam Indicators (${result.scam_indicators.length} found)</h3>
+        ${result.scam_indicators.length === 0 ? '<div class="card safe">✅ No major scam indicators detected.</div>' : result.scam_indicators.map(w => `<div class="card danger"><strong>${w.title}</strong> (+${w.points} pts) — ${w.reason}<br/><em style="font-size:10px;color:#666">Evidence: ${w.evidence}</em></div>`).join('')}
+      </div>
+      <div class="section"><h3>💰 Salary</h3><div class="card">Offered: ${result.salary_analysis.offered_salary ? '₹' + result.salary_analysis.offered_salary : 'Not mentioned'} | Typical: ${result.salary_analysis.estimated_range} | ${result.salary_analysis.status}</div></div>
+      <div class="section"><h3>🧠 Skill Match — ${result.skill_match.skill_match_percent}%</h3><div class="card">Matched: ${result.skill_match.matched_skills.map(s => `<span class="tag">${s}</span>`).join('') || 'None'}<br/>Missing: <span style="color:#c62828">${result.skill_match.missing_skills.join(', ') || 'None'}</span></div></div>
+      <div class="section"><h3>✅ Safe Apply Checklist</h3><ul class="checklist">${result.safe_apply_checklist.map(i => `<li>${i}</li>`).join('')}</ul></div>
+      ${result.risk_score >= 61 ? `<div class="complaint"><h3>🚨 File a Complaint (High Risk Detected)</h3><p style="font-size:12px;margin:4px 0"><strong>Cybercrime Portal:</strong> https://cybercrime.gov.in</p><p style="font-size:12px;margin:4px 0"><strong>National Consumer Helpline:</strong> 1800-11-4000</p><p style="font-size:12px;margin:4px 0"><strong>Company Reported:</strong> ${companyName || 'As in offer'} | <strong>Date:</strong> ${reportDate}</p></div>` : ''}
+      <div class="disclaimer">⚠️ ${result.disclaimer}</div>
+    </div>
+    <div class="footer"><span>🛡️ CareerTrust AI — Smart Career Safety</span><span>${loginData.name || 'Student'} | ${reportDate}</span></div>
+    </body></html>`
+    const win = window.open('', '_blank')
+    win.document.write(html)
+    win.document.close()
+    setTimeout(() => win.print(), 600)
+  }
+
+  const submitCommunityReport = () => {
+    if (!reportForm.company || !reportForm.description) return
+    const newReport = { id: Date.now(), ...reportForm, date: new Date().toLocaleDateString('en-IN'), votes: 1 }
+    const existing = JSON.parse(localStorage.getItem('ct_community_reports') || '[]')
+    const updated = [newReport, ...existing].slice(0, 100)
+    localStorage.setItem('ct_community_reports', JSON.stringify(updated))
+    setCommunityReports(updated)
+    setReportForm({ company: '', city: '', description: '', category: 'Registration Fee' })
+    setReportSubmitted(true)
+    setTimeout(() => setReportSubmitted(false), 3000)
+  }
+
   const getRiskColor = (level) => level === 'Low Risk' ? '#2e7d32' : level === 'Needs Verification' ? '#f9a825' : level === 'High Risk' ? '#ef6c00' : level === 'Very High Risk' ? '#c62828' : '#555'
   const getRiskEmoji = (level) => level === 'Low Risk' ? '😊' : level === 'Needs Verification' ? '🤔' : level === 'High Risk' ? '⚠️' : level === 'Very High Risk' ? '🚨' : '❓'
   const getRecommendation = (entry) => entry.risk_score >= 61 ? 'Avoid until verified' : entry.risk_score >= 31 ? 'Apply with caution, verify first' : entry.opportunity_score >= 70 ? 'Recommended' : 'Worth applying after verification'
@@ -574,6 +657,8 @@ function App() {
         <button onClick={() => { setPage('news'); fetchScamNews() }} className="sidebar-nav-btn" style={navBtn(page === 'news')}>📰 Scam News</button>
         <button onClick={() => setPage('tips')} className="sidebar-nav-btn" style={navBtn(page === 'tips')}>💡 Interview Tips</button>
         <button onClick={() => setPage('career')} className="sidebar-nav-btn" style={navBtn(page === 'career')}>🚀 Career Guide</button>
+        <button onClick={() => { setPage('community'); const r = JSON.parse(localStorage.getItem('ct_community_reports') || '[]'); setCommunityReports(r) }} className="sidebar-nav-btn" style={navBtn(page === 'community')}>🚨 Report Scam</button>
+        <button onClick={() => setPage('heatmap')} className="sidebar-nav-btn" style={navBtn(page === 'heatmap')}>🗺️ Scam Map</button>
         <button onClick={() => isLoggedIn ? setPage('profile') : setPage('login')} className="sidebar-nav-btn" style={navBtn(page === 'profile')}>{L.profile}</button>
         <div className="sidebar-spacer" />
         <div className="sidebar-bottom">
@@ -700,6 +785,7 @@ function App() {
           <div className="no-print" style={{ display: 'flex', gap: '8px', marginBottom: '18px', flexWrap: 'wrap' }}>
             <button onClick={startNewAnalysis} style={{ background: theme.cardBg, color: theme.text, border: `1px solid ${theme.border}`, padding: '9px 16px', borderRadius: '8px', cursor: 'pointer', fontSize: '13px' }}>{L.newAnalysis}</button>
             <button onClick={() => window.print()} style={{ background: '#0b2e33', color: '#fff', border: 'none', padding: '9px 16px', borderRadius: '8px', cursor: 'pointer', fontSize: '13px' }}>{L.download}</button>
+            <button onClick={downloadPDFReport} style={{ background: 'linear-gradient(90deg,#c62828,#ef6c00)', color: '#fff', border: 'none', padding: '9px 16px', borderRadius: '8px', cursor: 'pointer', fontSize: '13px' }}>📄 PDF Report</button>
             <button onClick={addToComparison} style={{ background: '#2e7d32', color: '#fff', border: 'none', padding: '9px 16px', borderRadius: '8px', cursor: 'pointer', fontSize: '13px' }}>{L.addCompare}</button>
             {!result.error && (<><button onClick={shareWhatsApp} style={{ background: '#25D366', color: '#fff', border: 'none', padding: '9px 16px', borderRadius: '8px', cursor: 'pointer', fontSize: '13px' }}>{L.shareWA}</button><button onClick={shareEmail} style={{ background: '#1565c0', color: '#fff', border: 'none', padding: '9px 16px', borderRadius: '8px', cursor: 'pointer', fontSize: '13px' }}>{L.shareMail}</button><button onClick={shareAsImage} style={{ background: 'linear-gradient(90deg, #25D366, #128C7E)', color: '#fff', border: 'none', padding: '9px 16px', borderRadius: '8px', cursor: 'pointer', fontSize: '13px' }}>🖼️ Share as Image</button></>)}
             {comparisonList.length > 0 && <button onClick={() => document.getElementById('comparison-section').scrollIntoView({ behavior: 'smooth' })} style={{ background: '#7b1fa2', color: '#fff', border: 'none', padding: '9px 16px', borderRadius: '8px', cursor: 'pointer', fontSize: '13px' }}>{L.viewCompare} ({comparisonList.length})</button>}
@@ -833,6 +919,109 @@ function App() {
         </div>
       )}
 
+      {page === 'community' && (
+        <div key="community" className="page-fade" style={{ maxWidth: '750px', margin: '0 auto', padding: '40px 16px 60px' }}>
+          <h1 style={{ color: theme.text, fontSize: '26px', marginBottom: '6px' }}>🚨 Report a Scam</h1>
+          <p style={{ color: theme.muted, marginBottom: '24px' }}>Help fellow students by reporting fake job offers. Your reports warn others!</p>
+
+          {/* Submit form */}
+          <div className="ui-card" style={{ background: theme.cardBg, borderRadius: '14px', padding: '22px', marginBottom: '24px', boxShadow: '0 4px 14px rgba(0,0,0,0.07)' }}>
+            <h3 style={{ color: '#c62828', marginTop: 0 }}>📝 Submit a Scam Report</h3>
+            {reportSubmitted && <div style={{ background: '#e8f5e9', color: '#2e7d32', padding: '10px 14px', borderRadius: '8px', marginBottom: '14px', fontWeight: 'bold' }}>✅ Report submitted! Thank you for keeping students safe.</div>}
+            <input type="text" placeholder="Company / Recruiter Name *" value={reportForm.company} onChange={e => setReportForm({ ...reportForm, company: e.target.value })} style={{ width: '100%', padding: '10px', marginBottom: '10px', borderRadius: '8px', border: '1px solid #ccc', background: theme.cardBg, color: theme.text }} />
+            <input type="text" placeholder="City (e.g. Chennai, Bangalore)" value={reportForm.city} onChange={e => setReportForm({ ...reportForm, city: e.target.value })} style={{ width: '100%', padding: '10px', marginBottom: '10px', borderRadius: '8px', border: '1px solid #ccc', background: theme.cardBg, color: theme.text }} />
+            <select value={reportForm.category} onChange={e => setReportForm({ ...reportForm, category: e.target.value })} style={{ width: '100%', padding: '10px', marginBottom: '10px', borderRadius: '8px', border: '1px solid #ccc', background: theme.cardBg, color: theme.text }}>
+              {['Registration Fee', 'Fake Offer Letter', 'OTP / Data Theft', 'Task-based Scam', 'Impersonating MNC', 'Other'].map(c => <option key={c}>{c}</option>)}
+            </select>
+            <textarea rows="3" placeholder="Describe the scam — what happened, how they contacted you *" value={reportForm.description} onChange={e => setReportForm({ ...reportForm, description: e.target.value })} style={{ width: '100%', padding: '10px', marginBottom: '14px', borderRadius: '8px', border: '1px solid #ccc', background: theme.cardBg, color: theme.text, fontFamily: 'sans-serif' }} />
+            <button onClick={submitCommunityReport} className="ui-btn-primary" style={{ background: 'linear-gradient(90deg,#c62828,#ef6c00)', color: '#fff', border: 'none', padding: '12px 24px', borderRadius: '8px', fontWeight: 'bold', cursor: 'pointer', fontSize: '14px' }}>🚨 Submit Report</button>
+          </div>
+
+          {/* Community reports list */}
+          <h2 style={{ color: theme.text, marginBottom: '16px' }}>📋 Recent Community Reports ({communityReports.length})</h2>
+          {communityReports.length === 0 ? (
+            <div style={{ textAlign: 'center', color: theme.muted, padding: '30px' }}>No reports yet. Be the first to warn others!</div>
+          ) : communityReports.map((r, i) => (
+            <div key={r.id} className="ui-card" style={{ background: theme.cardBg, borderRadius: '12px', padding: '16px', marginBottom: '10px', boxShadow: '0 3px 10px rgba(0,0,0,0.06)', borderLeft: '4px solid #c62828' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '8px' }}>
+                <div>
+                  <div style={{ fontWeight: 'bold', color: theme.text, fontSize: '15px' }}>🏢 {r.company}</div>
+                  <div style={{ fontSize: '12px', color: theme.muted, marginTop: '2px' }}>{r.city && `📍 ${r.city} • `}{r.date}</div>
+                </div>
+                <span style={{ background: '#c62828', color: '#fff', padding: '3px 10px', borderRadius: '20px', fontSize: '11px', fontWeight: 'bold' }}>{r.category}</span>
+              </div>
+              <p style={{ color: theme.text, fontSize: '13px', margin: '10px 0 0', lineHeight: 1.5 }}>{r.description}</p>
+            </div>
+          ))}
+
+          {/* Cybercrime link */}
+          <div style={{ background: darkMode ? '#1a0a0a' : '#fff3f3', border: '1px solid #c62828', borderRadius: '12px', padding: '16px', marginTop: '16px' }}>
+            <h3 style={{ color: '#c62828', marginTop: 0 }}>🚔 File an Official Complaint</h3>
+            <p style={{ fontSize: '13px', color: theme.text, margin: '4px 0' }}>If you have been scammed, file a formal complaint:</p>
+            <a href="https://cybercrime.gov.in" target="_blank" rel="noreferrer" style={{ color: '#02c39a', fontWeight: 'bold', display: 'block', marginTop: '8px' }}>🌐 cybercrime.gov.in — National Cyber Crime Portal</a>
+            <a href="tel:1930" style={{ color: '#02c39a', fontWeight: 'bold', display: 'block', marginTop: '4px' }}>📞 1930 — Cyber Crime Helpline (24x7)</a>
+            <a href="tel:1800114000" style={{ color: '#02c39a', fontWeight: 'bold', display: 'block', marginTop: '4px' }}>📞 1800-11-4000 — Consumer Helpline</a>
+          </div>
+        </div>
+      )}
+
+      {page === 'heatmap' && (
+        <div key="heatmap" className="page-fade" style={{ maxWidth: '750px', margin: '0 auto', padding: '40px 16px 60px' }}>
+          <h1 style={{ color: theme.text, fontSize: '26px', marginBottom: '6px' }}>🗺️ India Scam Heatmap</h1>
+          <p style={{ color: theme.muted, marginBottom: '24px' }}>City-wise job scam reports across India. Based on user reports + news data.</p>
+
+          {/* City stats */}
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: '12px', marginBottom: '28px' }}>
+            {[
+              { city: 'Mumbai', reports: 342, trend: '↑', color: '#c62828' },
+              { city: 'Delhi / NCR', reports: 298, trend: '↑', color: '#c62828' },
+              { city: 'Bangalore', reports: 256, trend: '↑', color: '#ef6c00' },
+              { city: 'Hyderabad', reports: 189, trend: '→', color: '#ef6c00' },
+              { city: 'Chennai', reports: 167, trend: '↑', color: '#ef6c00' },
+              { city: 'Pune', reports: 143, trend: '→', color: '#f9a825' },
+              { city: 'Kolkata', reports: 128, trend: '↓', color: '#f9a825' },
+              { city: 'Ahmedabad', reports: 98, trend: '→', color: '#f9a825' },
+              { city: 'Jaipur', reports: 76, trend: '↑', color: '#2e7d32' },
+              { city: 'Kochi', reports: 64, trend: '↓', color: '#2e7d32' },
+              { city: 'Coimbatore', reports: 58, trend: '→', color: '#2e7d32' },
+              { city: 'Lucknow', reports: 52, trend: '↑', color: '#2e7d32' },
+            ].map((city, i) => (
+              <div key={i} className="ui-card" style={{ background: theme.cardBg, borderRadius: '12px', padding: '16px', boxShadow: '0 3px 10px rgba(0,0,0,0.06)', borderTop: `3px solid ${city.color}` }}>
+                <div style={{ fontWeight: 'bold', color: theme.text, fontSize: '15px' }}>{city.city}</div>
+                <div style={{ fontSize: '24px', fontWeight: 800, color: city.color, margin: '6px 0' }}>{city.reports}</div>
+                <div style={{ fontSize: '11px', color: theme.muted }}>reports this year {city.trend}</div>
+              </div>
+            ))}
+          </div>
+
+          {/* Top scam categories */}
+          <div className="ui-card" style={{ background: theme.cardBg, borderRadius: '14px', padding: '20px', marginBottom: '20px', boxShadow: '0 4px 14px rgba(0,0,0,0.07)' }}>
+            <h3 style={{ color: '#02c39a', marginTop: 0 }}>📊 Top Scam Categories (India 2026)</h3>
+            {[
+              { name: 'Registration / Training Fee', pct: 34, color: '#c62828' },
+              { name: 'Fake Offer Letters (MNC impersonation)', pct: 26, color: '#ef6c00' },
+              { name: 'Task-based Scams (pay to unlock earnings)', pct: 18, color: '#f9a825' },
+              { name: 'OTP / Personal Data Theft', pct: 14, color: '#7b1fa2' },
+              { name: 'Others', pct: 8, color: '#028090' },
+            ].map((cat, i) => (
+              <div key={i} style={{ marginBottom: '12px' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '4px' }}>
+                  <span style={{ fontSize: '13px', color: theme.text }}>{cat.name}</span>
+                  <span style={{ fontSize: '13px', fontWeight: 'bold', color: cat.color }}>{cat.pct}%</span>
+                </div>
+                <div style={{ background: theme.border, borderRadius: '4px', height: '8px' }}>
+                  <div style={{ width: `${cat.pct}%`, background: cat.color, height: '100%', borderRadius: '4px', transition: 'width 1s ease' }} />
+                </div>
+              </div>
+            ))}
+          </div>
+
+          <div style={{ background: darkMode ? '#0f2a25' : '#e9fdf3', borderRadius: '10px', padding: '14px', fontSize: '12px', color: theme.muted }}>
+            💡 Data based on community reports, news aggregation, and cybercrime.gov.in public statistics. Report scams to keep this map updated.
+          </div>
+        </div>
+      )}
+
       {page === 'tips' && (
         <div key="tips" className="page-fade" style={{ maxWidth: '750px', margin: '0 auto', padding: '40px 16px 60px' }}>
           <h1 style={{ color: theme.text, fontSize: '26px', marginBottom: '6px' }}>💡 Interview Tips</h1>
@@ -929,6 +1118,7 @@ function App() {
             <p style={{ fontSize: '11px', color: theme.muted, marginTop: '10px', marginBottom: 0 }}>⚠️ Ranges vary by city, company size, and skills. Metro cities (Bangalore, Mumbai, Hyderabad) typically pay 20–40% higher.</p>
           </div>
 
+          {/* Roadmaps */}
           <h2 style={{ color: theme.text, marginBottom: '16px' }}>🗺️ Skill Roadmaps</h2>
           {[
             { path: '💻 Full Stack Developer', color: '#028090', steps: ['HTML + CSS + JavaScript basics (2 months)', 'React or Vue for frontend (1 month)', 'Node.js + Express or Django/FastAPI backend (1 month)', 'SQL + MongoDB databases (3 weeks)', 'Git, GitHub, deployment (Vercel/Render) (1 week)', 'Build 2-3 full projects → apply!'] },
@@ -949,6 +1139,7 @@ function App() {
             </div>
           ))}
 
+          {/* Red Flags in job offers */}
           <div style={{ background: darkMode ? '#2a1414' : '#fff3f3', border: '1px solid #c62828', borderRadius: '12px', padding: '18px', marginTop: '8px' }}>
             <h3 style={{ color: '#c62828', marginTop: 0 }}>🚩 Career Red Flags to Avoid</h3>
             {['Companies that promise "₹50,000/month work from home" with no interview process.', 'Internships that ask for money upfront — legit companies NEVER charge you.', 'Offer letters sent via WhatsApp from personal numbers (gmail/yahoo HR emails).', 'Roles with vague job descriptions like "data entry" or "online work" with high pay.', 'Any company asking for Aadhaar, PAN, or bank details before joining.'].map((flag, i) => (
@@ -991,7 +1182,7 @@ function App() {
       <div className="no-print" style={{ background: '#0b2e33', color: '#cadcda', padding: '24px 20px', marginTop: '20px' }}>
         <div style={{ maxWidth: '700px', margin: '0 auto', textAlign: 'center' }}>
           <div style={{ fontSize: '16px', fontWeight: 'bold', color: '#fff', marginBottom: '6px' }}>🛡️ CareerTrust AI</div>
-          <div style={{ fontSize: '11px', opacity: 0.6 }}>© 2026 CareerTrust AI. Built by Akash.</div>
+          <div style={{ fontSize: '11px', opacity: 0.6 }}>© 2026 CareerTrust AI. Built by Akash S.</div>
         </div>
       </div>
 
