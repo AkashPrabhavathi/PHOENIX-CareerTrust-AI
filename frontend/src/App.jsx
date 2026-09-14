@@ -668,8 +668,8 @@ function App() {
       })
       const data = await res.json()
       if (data.reply && !data.error) replyText = data.reply
-    } catch (error) 
-    if (!replyText) replyText = getBotReply(text, chatMessages)
+       } catch (error) { /* backend not reachable, fall back below */ }
+    if (!replyText) { replyText = getBotReply(text, chatMessages) }
     setTimeout(() => {
       setChatMessages([...newMessages, { sender: 'bot', text: replyText }])
       setBotTyping(false)
