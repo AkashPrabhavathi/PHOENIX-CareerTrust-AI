@@ -179,7 +179,7 @@ async def parse_resume(file: UploadFile = File(...)):
             return {"error": "PDF appears to be empty or image-based. Try a text-based PDF."}
 
         skills = extract_skills_from_text(text)
-        # also return raw text snippet for debugging
+    
         return {
             "skills": skills,
             "skills_string": ", ".join(skills),
@@ -195,7 +195,7 @@ import smtplib
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 
-otp_store = {}  # { email: { otp, expires } }
+otp_store = {}  
 
 class OTPRequest(BaseModel):
     email: str
@@ -209,7 +209,7 @@ class OTPVerify(BaseModel):
 def send_otp(data: OTPRequest):
     import time
     otp = str(random.randint(100000, 999999))
-    otp_store[data.email] = {"otp": otp, "expires": time.time() + 300}  # 5 min
+    otp_store[data.email] = {"otp": otp, "expires": time.time() + 300}  
 
     smtp_host = os.getenv("SMTP_HOST", "smtp.gmail.com")
     smtp_port = int(os.getenv("SMTP_PORT", "587"))
@@ -217,7 +217,6 @@ def send_otp(data: OTPRequest):
     smtp_pass = os.getenv("SMTP_PASS", "")
 
     if not smtp_user or not smtp_pass:
-
         return {"sent": False, "dev_otp": otp, "message": "SMTP not configured. Use this OTP for testing."}
 
     try:
@@ -283,3 +282,100 @@ def get_scam_news():
         {"title": "Fake offer letters from reputed MNCs — how scammers operate", "url": "https://moneycontrol.com", "source": "Moneycontrol", "date": "2026-08-10"},
         {"title": "Task-based job scam: Pay ₹500 to unlock ₹5000 earnings — red flag", "url": "https://ndtv.com", "source": "NDTV", "date": "2026-08-05"},
     ]}
+
+
+import urllib.parse
+
+class MCACheckRequest(BaseModel):
+    company_name: str
+
+@app.post("/mca-check")
+async def mca_check(data: MCACheckRequest):
+    """Check if company exists in MCA database via public search."""
+    name = data.company_name.strip()
+    if not name:
+        return {"status": "unknown", "message": "No company name provided."}
+
+    from .companies import LEGIT_COMPANIES, SCAM_COMPANIES
+
+    name_lower = name.lower()
+    for scam in SCAM_COMPANIES:
+        if scam["name"].lower() in name_lower or name_lower in scam["name"].lower():
+            return {
+                "status": "blacklisted",
+                "badge": "🚨 KNOWN SCAM",
+                "message": f"Found in CareerTrust scam database: {scam['reason']}",
+                "mca_registered": False,
+                "color": "#c62828",
+                "search_url": f"https://www.mca.gov.in/mcafoportal/viewCompanyMasterData.do",
+            }
+
+    for legit in LEGIT_COMPANIES:
+        if legit in name_lower or name_lower in legit:
+            return {
+                "status": "verified",
+                "badge": "✅ VERIFIED COMPANY",
+                "message": "This is a known established company in India. Still verify the recruiter independently.",
+                "mca_registered": True,
+                "color": "#2e7d32",
+                "search_url": f"https://www.mca.gov.in/mcafoportal/viewCompanyMasterData.do",
+            }
+
+    try:
+        search_url = f"https://www.mca.gov.in/mcafoportal/viewCompanyMasterData.do"
+        encoded = urllib.parse.quote(name)
+        api_url = f"https://autocomplete.mca.gov.in/autosuggest?term={encoded}&type=company"
+
+        req = urllib.request.Request(
+            api_url,
+            headers={
+                "User-Agent": "Mozilla/5.0",
+                "Referer": "https://www.mca.gov.in/",
+                "Accept": "application/json",
+            }
+        )
+        with urllib.request.urlopen(req, timeout=5) as r:
+            suggestions = json_lib.loads(r.read())
+
+        if suggestions and len(suggestions) > 0:
+            matched = [s for s in suggestions if name_lower in s.get("label", "").lower()]
+            if matched:
+                top = matched[0]
+                return {
+                    "status": "found",
+                    "badge": "✅ MCA REGISTERED",
+                    "message": f"Found in MCA database: {top.get('label', name)}. CIN/Registration exists.",
+                    "mca_registered": True,
+                    "color": "#2e7d32",
+                    "cin": top.get("value", ""),
+                    "search_url": f"https://www.mca.gov.in/mcafoportal/viewCompanyMasterData.do",
+                }
+            else:
+                return {
+                    "status": "not_found",
+                    "badge": "⚠️ NOT IN MCA DATABASE",
+                    "message": f"'{name}' not found in MCA company registry. This could mean it is unregistered, a fake company, or name is slightly different. Verify manually.",
+                    "mca_registered": False,
+                    "color": "#c62828",
+                    "search_url": f"https://www.mca.gov.in/mcafoportal/viewCompanyMasterData.do",
+                }
+        else:
+            return {
+                "status": "not_found",
+                "badge": "⚠️ NOT FOUND IN MCA",
+                "message": "No MCA registration found. Verify at mca.gov.in manually.",
+                "mca_registered": False,
+                "color": "#ef6c00",
+                "search_url": f"https://www.mca.gov.in/mcafoportal/viewCompanyMasterData.do",
+            }
+
+    except Exception as e:
+    
+        return {
+            "status": "manual",
+            "badge": "🔍 CHECK MANUALLY",
+            "message": "Could not reach MCA server. Click the link below to verify manually on mca.gov.in.",
+            "mca_registered": None,
+            "color": "#f9a825",
+            "search_url": f"https://www.mca.gov.in/mcafoportal/viewCompanyMasterData.do",
+        }
