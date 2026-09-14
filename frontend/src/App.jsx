@@ -174,12 +174,25 @@ function App() {
   const [memberSince, setMemberSince] = useState('')
   const [defaultSkills, setDefaultSkills] = useState('')
 
- 
   const [otpSent, setOtpSent] = useState(false)
   const [otpValue, setOtpValue] = useState('')
   const [otpDevCode, setOtpDevCode] = useState('')
 
- 
+  // CAPTCHA
+  const genCaptcha = () => {
+    const ops = ['+', '-', '×']
+    const op = ops[Math.floor(Math.random() * ops.length)]
+    let a = Math.floor(Math.random() * 9) + 1
+    let b = Math.floor(Math.random() * 9) + 1
+    if (op === '-' && b > a) [a, b] = [b, a]
+    const answer = op === '+' ? a + b : op === '-' ? a - b : a * b
+    return { question: `${a} ${op} ${b} = ?`, answer: String(answer) }
+  }
+  const [captcha, setCaptcha] = useState(() => genCaptcha())
+  const [captchaInput, setCaptchaInput] = useState('')
+  const [captchaError, setCaptchaError] = useState('')
+  const [captchaPassed, setCaptchaPassed] = useState(false)
+
   const [scamNews, setScamNews] = useState([])
   const [newsLoading, setNewsLoading] = useState(false)
 
@@ -193,8 +206,28 @@ function App() {
   const [resumeLoading, setResumeLoading] = useState(false)
   const [resumeSkills, setResumeSkills] = useState([])
   const [resumeName, setResumeName] = useState('')
+
+  const [mcaResult, setMcaResult] = useState(null)
+  const [mcaLoading, setMcaLoading] = useState(false)
   const [listening, setListening] = useState(false)
   const recognitionRef = useRef(null)
+
+  const checkMCA = async (name) => {
+    if (!name || name.length < 3) { setMcaResult(null); return }
+    setMcaLoading(true)
+    try {
+      const res = await fetch(API + '/mca-check', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ company_name: name })
+      })
+      const data = await res.json()
+      setMcaResult(data)
+    } catch (e) {
+      setMcaResult({ status: 'manual', badge: '🔍 CHECK MANUALLY', message: 'Backend not reachable. Verify at mca.gov.in manually.', color: '#f9a825', search_url: 'https://www.mca.gov.in/mcafoportal/viewCompanyMasterData.do' })
+    }
+    setMcaLoading(false)
+  }
 
   const handleResumeUpload = async (e) => {
     const file = e.target.files[0]
@@ -269,8 +302,18 @@ function App() {
     if (!loginData.name || !loginData.email) { setLoginStatus('Please enter your name and email.'); return }
     if (!isValidEmail(loginData.email)) { setLoginStatus('Please enter a valid email address.'); return }
 
+    if (!captchaPassed) {
+      if (captchaInput.trim() !== captcha.answer) {
+        setCaptchaError('Wrong answer! Try again.')
+        setCaptcha(genCaptcha())
+        setCaptchaInput('')
+        return
+      }
+      setCaptchaPassed(true)
+      setCaptchaError('')
+    }
+
     if (!otpSent) {
-      
       setLoginLoading(true)
       setLoginStatus('Sending OTP to your email...')
       try {
@@ -625,7 +668,7 @@ function App() {
       })
       const data = await res.json()
       if (data.reply && !data.error) replyText = data.reply
-    } catch (error) { /* backend not reachable, fall back below */ }
+    } catch (error) 
     if (!replyText) replyText = getBotReply(text, chatMessages)
     setTimeout(() => {
       setChatMessages([...newMessages, { sender: 'bot', text: replyText }])
@@ -692,6 +735,30 @@ function App() {
             <input type="text" placeholder={L.namePh} value={loginData.name} onChange={(e) => setLoginData({ ...loginData, name: e.target.value })} style={{ width: '100%', padding: '10px', marginBottom: '10px', borderRadius: '8px', border: '1px solid #ccc' }} />
             <input type="email" placeholder={L.emailPh} value={loginData.email} onChange={(e) => setLoginData({ ...loginData, email: e.target.value })} style={{ width: '100%', padding: '10px', marginBottom: '10px', borderRadius: '8px', border: '1px solid #ccc' }} />
             <input type="text" placeholder={L.phonePh} value={loginData.phone} onChange={(e) => setLoginData({ ...loginData, phone: e.target.value })} style={{ width: '100%', padding: '10px', marginBottom: '14px', borderRadius: '8px', border: '1px solid #ccc' }} />
+
+            {/* CAPTCHA */}
+            {!captchaPassed && (
+              <div style={{ background: darkMode ? '#0f2a25' : '#f0fdf9', border: '1.5px solid #02c39a', borderRadius: '10px', padding: '14px', marginBottom: '14px' }}>
+                <div style={{ fontSize: '12px', color: '#028090', fontWeight: 'bold', marginBottom: '8px' }}>🤖 Prove you're human</div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                  <div style={{ background: '#028090', color: '#fff', padding: '10px 16px', borderRadius: '8px', fontWeight: 'bold', fontSize: '18px', letterSpacing: '2px', fontFamily: 'monospace' }}>{captcha.question}</div>
+                  <input
+                    type="number"
+                    placeholder="Answer"
+                    value={captchaInput}
+                    onChange={(e) => setCaptchaInput(e.target.value)}
+                    style={{ width: '80px', padding: '10px', borderRadius: '8px', border: '1px solid #ccc', fontSize: '16px', textAlign: 'center' }}
+                  />
+                  <button onClick={() => { setCaptcha(genCaptcha()); setCaptchaInput(''); setCaptchaError('') }} style={{ background: 'transparent', border: '1px solid #02c39a', color: '#02c39a', padding: '8px 10px', borderRadius: '8px', cursor: 'pointer', fontSize: '16px' }} title="Refresh">🔄</button>
+                </div>
+                {captchaError && <div style={{ color: '#c62828', fontSize: '12px', marginTop: '6px' }}>{captchaError}</div>}
+              </div>
+            )}
+            {captchaPassed && (
+              <div style={{ background: '#e8f5e9', border: '1px solid #2e7d32', borderRadius: '8px', padding: '8px 14px', marginBottom: '14px', fontSize: '13px', color: '#2e7d32', fontWeight: 'bold' }}>
+                ✅ Human verified!
+              </div>
+            )}
             {otpSent && (
               <div style={{ marginBottom: '14px' }}>
                 <div style={{ fontSize: '12px', color: '#028090', marginBottom: '6px', fontWeight: 'bold' }}>📧 Enter the 6-digit OTP sent to your email:</div>
@@ -738,7 +805,23 @@ function App() {
           <p style={{ color: theme.muted, textAlign: 'center', marginBottom: '26px' }}>{L.formSub}</p>
           <div className="ui-card" style={{ background: theme.cardBg, borderRadius: '14px', padding: '22px', boxShadow: '0 8px 24px rgba(0,0,0,0.08)' }}>
             <label style={{ fontWeight: 'bold', color: theme.text }}>{L.companyLabel}</label>
-            <input type="text" style={{ width: '100%', marginBottom: '14px', padding: '10px', borderRadius: '8px', border: '1px solid #ccc', marginTop: '6px' }} value={companyName} onChange={(e) => setCompanyName(e.target.value)} placeholder="e.g. Wipro, Infosys" />
+            <div style={{ display: 'flex', gap: '8px', marginTop: '6px', marginBottom: '8px' }}>
+              <input type="text" style={{ flex: 1, padding: '10px', borderRadius: '8px', border: '1px solid #ccc', background: theme.cardBg, color: theme.text }} value={companyName} onChange={(e) => { setCompanyName(e.target.value); setMcaResult(null) }} placeholder="e.g. Wipro, Infosys, TCS" />
+              <button onClick={() => checkMCA(companyName)} disabled={mcaLoading || !companyName} style={{ background: 'linear-gradient(90deg,#028090,#02c39a)', color: '#fff', border: 'none', padding: '10px 16px', borderRadius: '8px', cursor: 'pointer', fontWeight: 'bold', fontSize: '13px', whiteSpace: 'nowrap' }}>
+                {mcaLoading ? '⏳...' : '🏛️ MCA Check'}
+              </button>
+            </div>
+            {mcaResult && (
+              <div style={{ marginBottom: '14px', padding: '12px 14px', borderRadius: '10px', background: mcaResult.color + '15', border: `1.5px solid ${mcaResult.color}`, display: 'flex', gap: '10px', alignItems: 'flex-start' }}>
+                <span style={{ fontSize: '20px' }}>{mcaResult.badge?.split(' ')[0]}</span>
+                <div style={{ flex: 1 }}>
+                  <div style={{ fontWeight: 'bold', color: mcaResult.color, fontSize: '13px' }}>{mcaResult.badge}</div>
+                  <div style={{ fontSize: '12px', color: theme.text, marginTop: '3px' }}>{mcaResult.message}</div>
+                  {mcaResult.cin && <div style={{ fontSize: '11px', color: theme.muted, marginTop: '2px' }}>CIN: {mcaResult.cin}</div>}
+                  <a href={mcaResult.search_url} target="_blank" rel="noreferrer" style={{ fontSize: '11px', color: '#02c39a', marginTop: '4px', display: 'inline-block' }}>🔗 Verify on mca.gov.in →</a>
+                </div>
+              </div>
+            )}
             <label style={{ fontWeight: 'bold', color: theme.text }}>{L.screenshotLabel}</label>
             <div style={{ marginTop: '6px', marginBottom: '14px' }}>
               <input type="file" accept="image/*" onChange={handleScreenshotUpload} />
@@ -924,7 +1007,6 @@ function App() {
           <h1 style={{ color: theme.text, fontSize: '26px', marginBottom: '6px' }}>🚨 Report a Scam</h1>
           <p style={{ color: theme.muted, marginBottom: '24px' }}>Help fellow students by reporting fake job offers. Your reports warn others!</p>
 
-          {/* Submit form */}
           <div className="ui-card" style={{ background: theme.cardBg, borderRadius: '14px', padding: '22px', marginBottom: '24px', boxShadow: '0 4px 14px rgba(0,0,0,0.07)' }}>
             <h3 style={{ color: '#c62828', marginTop: 0 }}>📝 Submit a Scam Report</h3>
             {reportSubmitted && <div style={{ background: '#e8f5e9', color: '#2e7d32', padding: '10px 14px', borderRadius: '8px', marginBottom: '14px', fontWeight: 'bold' }}>✅ Report submitted! Thank you for keeping students safe.</div>}
@@ -936,8 +1018,6 @@ function App() {
             <textarea rows="3" placeholder="Describe the scam — what happened, how they contacted you *" value={reportForm.description} onChange={e => setReportForm({ ...reportForm, description: e.target.value })} style={{ width: '100%', padding: '10px', marginBottom: '14px', borderRadius: '8px', border: '1px solid #ccc', background: theme.cardBg, color: theme.text, fontFamily: 'sans-serif' }} />
             <button onClick={submitCommunityReport} className="ui-btn-primary" style={{ background: 'linear-gradient(90deg,#c62828,#ef6c00)', color: '#fff', border: 'none', padding: '12px 24px', borderRadius: '8px', fontWeight: 'bold', cursor: 'pointer', fontSize: '14px' }}>🚨 Submit Report</button>
           </div>
-
-          {/* Community reports list */}
           <h2 style={{ color: theme.text, marginBottom: '16px' }}>📋 Recent Community Reports ({communityReports.length})</h2>
           {communityReports.length === 0 ? (
             <div style={{ textAlign: 'center', color: theme.muted, padding: '30px' }}>No reports yet. Be the first to warn others!</div>
@@ -954,7 +1034,6 @@ function App() {
             </div>
           ))}
 
-          {/* Cybercrime link */}
           <div style={{ background: darkMode ? '#1a0a0a' : '#fff3f3', border: '1px solid #c62828', borderRadius: '12px', padding: '16px', marginTop: '16px' }}>
             <h3 style={{ color: '#c62828', marginTop: 0 }}>🚔 File an Official Complaint</h3>
             <p style={{ fontSize: '13px', color: theme.text, margin: '4px 0' }}>If you have been scammed, file a formal complaint:</p>
@@ -970,7 +1049,6 @@ function App() {
           <h1 style={{ color: theme.text, fontSize: '26px', marginBottom: '6px' }}>🗺️ India Scam Heatmap</h1>
           <p style={{ color: theme.muted, marginBottom: '24px' }}>City-wise job scam reports across India. Based on user reports + news data.</p>
 
-          {/* City stats */}
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: '12px', marginBottom: '28px' }}>
             {[
               { city: 'Mumbai', reports: 342, trend: '↑', color: '#c62828' },
@@ -994,7 +1072,6 @@ function App() {
             ))}
           </div>
 
-          {/* Top scam categories */}
           <div className="ui-card" style={{ background: theme.cardBg, borderRadius: '14px', padding: '20px', marginBottom: '20px', boxShadow: '0 4px 14px rgba(0,0,0,0.07)' }}>
             <h3 style={{ color: '#02c39a', marginTop: 0 }}>📊 Top Scam Categories (India 2026)</h3>
             {[
@@ -1085,7 +1162,6 @@ function App() {
           <h1 style={{ color: theme.text, fontSize: '26px', marginBottom: '6px' }}>🚀 Career Guide</h1>
           <p style={{ color: theme.muted, marginBottom: '28px' }}>Skill roadmaps, salary insights, and career paths for students in India.</p>
 
-          {/* Salary Insights */}
           <div className="ui-card" style={{ background: theme.cardBg, borderRadius: '14px', padding: '20px', marginBottom: '20px', boxShadow: '0 4px 14px rgba(0,0,0,0.07)' }}>
             <h3 style={{ color: '#02c39a', marginTop: 0 }}>💰 Fresher Salary Range (India 2026)</h3>
             <div style={{ overflowX: 'auto' }}>
@@ -1118,7 +1194,6 @@ function App() {
             <p style={{ fontSize: '11px', color: theme.muted, marginTop: '10px', marginBottom: 0 }}>⚠️ Ranges vary by city, company size, and skills. Metro cities (Bangalore, Mumbai, Hyderabad) typically pay 20–40% higher.</p>
           </div>
 
-          {/* Roadmaps */}
           <h2 style={{ color: theme.text, marginBottom: '16px' }}>🗺️ Skill Roadmaps</h2>
           {[
             { path: '💻 Full Stack Developer', color: '#028090', steps: ['HTML + CSS + JavaScript basics (2 months)', 'React or Vue for frontend (1 month)', 'Node.js + Express or Django/FastAPI backend (1 month)', 'SQL + MongoDB databases (3 weeks)', 'Git, GitHub, deployment (Vercel/Render) (1 week)', 'Build 2-3 full projects → apply!'] },
@@ -1139,7 +1214,6 @@ function App() {
             </div>
           ))}
 
-          {/* Red Flags in job offers */}
           <div style={{ background: darkMode ? '#2a1414' : '#fff3f3', border: '1px solid #c62828', borderRadius: '12px', padding: '18px', marginTop: '8px' }}>
             <h3 style={{ color: '#c62828', marginTop: 0 }}>🚩 Career Red Flags to Avoid</h3>
             {['Companies that promise "₹50,000/month work from home" with no interview process.', 'Internships that ask for money upfront — legit companies NEVER charge you.', 'Offer letters sent via WhatsApp from personal numbers (gmail/yahoo HR emails).', 'Roles with vague job descriptions like "data entry" or "online work" with high pay.', 'Any company asking for Aadhaar, PAN, or bank details before joining.'].map((flag, i) => (
