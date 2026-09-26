@@ -178,7 +178,6 @@ function App() {
   const [otpValue, setOtpValue] = useState('')
   const [otpDevCode, setOtpDevCode] = useState('')
 
-  // CAPTCHA
   const genCaptcha = () => {
     const ops = ['+', '-', '×']
     const op = ops[Math.floor(Math.random() * ops.length)]
@@ -719,7 +718,7 @@ function App() {
           </div>
           <div className="no-print hero-content" style={{ textAlign: 'center', padding: '48px 20px 24px' }}>
             <div style={{ display: 'inline-block', background: darkMode ? '#0f3339' : '#e0f7f1', color: '#02c39a', padding: '6px 16px', borderRadius: '20px', fontSize: '12px', fontWeight: 'bold', marginBottom: '16px' }}>{L.heroBadge}</div>
-            <h1 style={{ color: theme.text, fontSize: '38px', fontWeight: 800, marginBottom: '10px', lineHeight: 1.2 }}>{L.heroLine1}<br /><span style={{ background: 'linear-gradient(90deg, #028090, #02c39a)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>{L.heroLine2}</span></h1>
+            <h1 style={{ color: theme.text, fontSize: 'clamp(22px, 5vw, 38px)', fontWeight: 800, marginBottom: '10px', lineHeight: 1.2 }}>{L.heroLine1}<br /><span style={{ background: 'linear-gradient(90deg, #028090, #02c39a)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>{L.heroLine2}</span></h1>
             <p style={{ color: theme.muted, fontSize: '15px', maxWidth: '480px', margin: '0 auto' }}>{L.heroSub}</p>
             <div style={{ display: 'flex', justifyContent: 'center', gap: '28px', marginTop: '28px', flexWrap: 'wrap' }}>
               <div style={{ textAlign: 'center' }}><div style={{ fontSize: '24px', fontWeight: 800, color: '#02c39a' }}>13+</div><div style={{ fontSize: '11px', color: theme.muted }}>{L.statPatterns}</div></div>
@@ -729,7 +728,7 @@ function App() {
             <button onClick={() => document.getElementById('login-card').scrollIntoView({ behavior: 'smooth' })} className="ui-btn-primary" style={{ marginTop: '28px', background: 'linear-gradient(90deg, #028090, #02c39a)', color: '#fff', border: 'none', padding: '14px 32px', borderRadius: '30px', fontWeight: 'bold', fontSize: '15px', cursor: 'pointer' }}>{L.getStarted}</button>
           </div>
 
-          <div id="login-card" className="ui-card" style={{ maxWidth: '400px', margin: '20px auto 40px', background: theme.cardBg, borderRadius: '16px', padding: '26px', boxShadow: '0 10px 30px rgba(0,0,0,0.1)' }}>
+          <div id="login-card" className="ui-card" style={{ maxWidth: '400px', margin: '20px auto 40px', background: theme.cardBg, borderRadius: '16px', padding: '26px', boxShadow: '0 10px 30px rgba(0,0,0,0.1)', width: '90%' }}>
             <h3 style={{ marginTop: 0, color: theme.text, textAlign: 'center' }}>{L.loginTitle}</h3>
             <p style={{ fontSize: '12px', color: theme.muted, textAlign: 'center', marginTop: '-6px' }}>{L.loginSub}</p>
             <input type="text" placeholder={L.namePh} value={loginData.name} onChange={(e) => setLoginData({ ...loginData, name: e.target.value })} style={{ width: '100%', padding: '10px', marginBottom: '10px', borderRadius: '8px', border: '1px solid #ccc' }} />
