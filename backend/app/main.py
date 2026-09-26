@@ -27,7 +27,7 @@ app = FastAPI(title="CareerTrust AI - Backend")
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:5173"],
+    allow_origins=["http://localhost:5173", "https://phoenix-career-trust-db5bxjmjc-akash-project1.vercel.app", "https://*.vercel.app"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
