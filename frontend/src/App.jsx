@@ -998,7 +998,7 @@ function App() {
             </a>
           ))}
           <div style={{ marginTop: '20px', padding: '14px', background: darkMode ? '#0f2a25' : '#e9fdf3', borderRadius: '10px', fontSize: '12px', color: theme.muted }}>
-            💡 <strong>Tip:</strong> Add a free GNews API key in backend .env as <code>GNEWS_API_KEY=your_key</code> to get live news. Get key at <a href="https://gnews.io" target="_blank" rel="noreferrer" style={{ color: '#02c39a' }}>gnews.io</a>
+           🛡️ <strong>Stay Alert:</strong> Always verify job offers through the company's official website before sharing personal details or paying fees. target="_blank" rel="noreferrer" style={{ color: '#02c39a' }}>gnews.io</a>
           </div>
         </div>
       )}
