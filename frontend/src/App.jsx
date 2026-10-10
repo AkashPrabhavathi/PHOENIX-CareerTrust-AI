@@ -998,7 +998,11 @@ function App() {
             </a>
           ))}
           <div style={{ marginTop: '20px', padding: '14px', background: darkMode ? '#0f2a25' : '#e9fdf3', borderRadius: '10px', fontSize: '12px', color: theme.muted }}>
-           🛡️ <strong>Stay Alert:</strong> Always verify job offers through the company's official website before sharing personal details or paying fees. target="_blank" rel="noreferrer" style={{ color: '#02c39a' }}>gnews.io</a>
+          
+<p>
+  🛡️ <strong>Stay Alert:</strong> Always verify job offers through the company's official website before sharing personal details or paying fees.
+</p>
+
           </div>
         </div>
       )}
