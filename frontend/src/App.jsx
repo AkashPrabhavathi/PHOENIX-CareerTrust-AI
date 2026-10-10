@@ -153,7 +153,8 @@ function SplashScreen({ visible }) {
 }
 
 function App() {
-  const API = import.meta.env.VITE_BACKEND_URL || 'http://127.0.0.1:8000'
+ 
+  const API = import.meta.env.VITE_BACKEND_URL || 'https://careertrust-backend-qepr.onrender.com'
   const [showSplash, setShowSplash] = useState(true)
   const [splashFading, setSplashFading] = useState(false)
   const [page, setPage] = useState('login')
