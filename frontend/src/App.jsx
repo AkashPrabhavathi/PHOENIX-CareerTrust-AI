@@ -153,7 +153,7 @@ function SplashScreen({ visible }) {
 }
 
 function App() {
- 
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const API = import.meta.env.VITE_BACKEND_URL || 'https://careertrust-backend-qepr.onrender.com'
   const [showSplash, setShowSplash] = useState(true)
   const [splashFading, setSplashFading] = useState(false)
@@ -687,8 +687,20 @@ function App() {
       {showConfetti && ['🎉', '✅', '🎊', '🟢', '✨', '🎉', '✅', '🎊'].map((e, i) => (
         <span key={i} className="confetti-piece" style={{ left: `${10 + i * 11}%`, animationDelay: `${i * 0.15}s` }}>{e}</span>
       ))}
+      
+<button
+  className="mobile-menu-toggle no-print"
+  onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+  aria-label="Toggle navigation menu"
+  aria-expanded={mobileMenuOpen}
+>
+  {mobileMenuOpen ? '✕' : '☰'}
+</button>
 
-      <div className="no-print sidebar">
+
+     
+<div className={`no-print sidebar ${mobileMenuOpen ? 'mobile-menu-open' : ''}`}>
+
         <div className="sidebar-brand" onClick={() => setPage('login')}>
           <BuildIcon icon="🛡️" trigger={page} />
           <span>CareerTrust AI</span>
