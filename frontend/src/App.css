@@ -501,3 +501,61 @@ body {
   .hero-blobs .b2 { width: 200px; height: 200px; }
   .hero-blobs .b3 { display: none; }
 }
+
+
+@media (max-width: 780px) {
+  html,
+  body,
+  #root {
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+  }
+
+  .main-with-sidebar,
+  .page-fade,
+  .hero-content {
+    min-width: 0;
+    box-sizing: border-box;
+  }
+
+  .page-fade {
+    overflow-wrap: anywhere;
+  }
+
+  .main-with-sidebar img,
+  .main-with-sidebar video {
+    max-width: 100%;
+    height: auto;
+  }
+
+  .main-with-sidebar input,
+  .main-with-sidebar textarea,
+  .main-with-sidebar select {
+    max-width: 100%;
+    min-width: 0;
+    box-sizing: border-box;
+  }
+
+  .main-with-sidebar table {
+    display: block;
+    max-width: 100%;
+    overflow-x: auto;
+  }
+
+  .sidebar-nav-btn:hover:not(:disabled) {
+    transform: none;
+  }
+
+  button {
+    min-height: 40px;
+  }
+}
+
+@media (max-width: 400px) {
+  .hero-content {
+    padding-left: 8px !important;
+    padding-right: 8px !important;
+  }
+}
+
