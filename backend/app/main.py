@@ -23,15 +23,21 @@ from .email_check import verify_email
 
 load_dotenv()
 
+
 app = FastAPI(title="CareerTrust AI - Backend")
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:5173"],
+    allow_origins=[
+        "http://localhost:5173",
+        "https://phoenix-career-trust-ai-nu.vercel.app",
+        "https://phoenix-career-trust-ai.vercel.app",
+    ],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
 
 
 @app.get("/")
