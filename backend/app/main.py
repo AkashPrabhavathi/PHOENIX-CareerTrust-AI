@@ -27,7 +27,7 @@ app = FastAPI(title="CareerTrust AI - Backend")
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:5173", "https://phoenix-career-trust-db5bxjmjc-akash-project1.vercel.app", "https://*.vercel.app"],
+    allow_origins=["http://localhost:5173"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -165,7 +165,7 @@ async def parse_resume(file: UploadFile = File(...)):
     """Accept a PDF resume, extract text, detect skills."""
     try:
         contents = await file.read()
-      
+        # Try PyPDF2 first
         try:
             import PyPDF2
             reader = PyPDF2.PdfReader(io.BytesIO(contents))
@@ -179,7 +179,6 @@ async def parse_resume(file: UploadFile = File(...)):
             return {"error": "PDF appears to be empty or image-based. Try a text-based PDF."}
 
         skills = extract_skills_from_text(text)
-    
         return {
             "skills": skills,
             "skills_string": ", ".join(skills),
@@ -189,13 +188,12 @@ async def parse_resume(file: UploadFile = File(...)):
     except Exception as e:
         return {"error": f"Failed to process resume: {str(e)}"}
 
-
 import random
 import smtplib
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 
-otp_store = {}  
+otp_store = {}  # { email: { otp, expires } }
 
 class OTPRequest(BaseModel):
     email: str
@@ -209,7 +207,7 @@ class OTPVerify(BaseModel):
 def send_otp(data: OTPRequest):
     import time
     otp = str(random.randint(100000, 999999))
-    otp_store[data.email] = {"otp": otp, "expires": time.time() + 300}  
+    otp_store[data.email] = {"otp": otp, "expires": time.time() + 300}  # 5 min
 
     smtp_host = os.getenv("SMTP_HOST", "smtp.gmail.com")
     smtp_port = int(os.getenv("SMTP_PORT", "587"))
@@ -370,7 +368,6 @@ async def mca_check(data: MCACheckRequest):
             }
 
     except Exception as e:
-    
         return {
             "status": "manual",
             "badge": "🔍 CHECK MANUALLY",
