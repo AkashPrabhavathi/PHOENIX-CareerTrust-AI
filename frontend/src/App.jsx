@@ -980,7 +980,7 @@ function App() {
           </div>
           <div style={{ background: theme.cardBg, borderRadius: '14px', padding: '24px', boxShadow: '0 4px 14px rgba(0,0,0,0.06)' }}>
             <h3 style={{ marginTop: 0, color: theme.text }}>Built By</h3>
-            <p style={{ color: theme.muted, fontSize: '14px', margin: 0 }}>Akash S — an independent project focused on student career safety.</p>
+            <p style={{ color: theme.muted, fontSize: '14px', margin: 0 }}>Akash — an independent project focused on student career safety.</p>
           </div>
         </div>
       )}
@@ -1273,7 +1273,7 @@ function App() {
       <div className="no-print" style={{ background: '#0b2e33', color: '#cadcda', padding: '24px 20px', marginTop: '20px' }}>
         <div style={{ maxWidth: '700px', margin: '0 auto', textAlign: 'center' }}>
           <div style={{ fontSize: '16px', fontWeight: 'bold', color: '#fff', marginBottom: '6px' }}>🛡️ CareerTrust AI</div>
-          <div style={{ fontSize: '11px', opacity: 0.6 }}>© 2026 CareerTrust AI. Built by Akash S.</div>
+          <div style={{ fontSize: '11px', opacity: 0.6 }}>© 2026 CareerTrust AI. Built by Akash.</div>
         </div>
       </div>
 
